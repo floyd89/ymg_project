@@ -1,19 +1,35 @@
-
 import React, { useState, useEffect } from 'react';
 import { settingsService } from '../../services/settingsService';
 import { bannerService } from '../../services/bannerService';
 import { AppSettings, Banner } from '../../types';
-import { fileToBase64 } from '../../utils/imageConverter';
+import { uploadImage } from '../../utils/imageConverter';
 import AdminNotice from '../../components/admin/AdminNotice';
 
 const SettingsView: React.FC = () => {
   const [settings, setSettings] = useState<AppSettings>({ whatsAppNumber: '' });
   const [banners, setBanners] = useState<Banner[]>([]);
   const [activeTab, setActiveTab] = useState<'general' | 'banners'>('general');
+  const [isLoading, setIsLoading] = useState(true);
+  const [isUploading, setIsUploading] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
-    setSettings(settingsService.getSettings());
-    setBanners(bannerService.getBanners());
+    const loadData = async () => {
+      setIsLoading(true);
+      try {
+        const [fetchedSettings, fetchedBanners] = await Promise.all([
+          settingsService.getSettings(),
+          bannerService.getBanners()
+        ]);
+        setSettings(fetchedSettings);
+        setBanners(fetchedBanners);
+      } catch (error) {
+        alert("Gagal memuat pengaturan dari server.");
+        console.error(error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    loadData();
   }, []);
 
   const handleSettingsChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -21,9 +37,13 @@ const SettingsView: React.FC = () => {
     setSettings(prev => ({ ...prev, [name]: value }));
   };
 
-  const handleSaveSettings = () => {
-    settingsService.saveSettings(settings);
-    alert('Pengaturan umum berhasil disimpan!');
+  const handleSaveSettings = async () => {
+    try {
+      await settingsService.saveSettings(settings);
+      alert('Pengaturan umum berhasil disimpan!');
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'Gagal menyimpan pengaturan.');
+    }
   };
 
   const handleBannerChange = (index: number, e: React.ChangeEvent<HTMLInputElement>) => {
@@ -35,20 +55,28 @@ const SettingsView: React.FC = () => {
   
   const handleBannerImageChange = async (index: number, file: File | null) => {
       if (!file) return;
+      const uploadKey = `banner-${index}`;
+      setIsUploading(prev => ({...prev, [uploadKey]: true}));
       try {
-        const base64Image = await fileToBase64(file);
+        const imageUrl = await uploadImage(file);
         const newBanners = [...banners];
-        newBanners[index].imgUrl = base64Image;
+        newBanners[index].imgUrl = imageUrl;
         setBanners(newBanners);
       } catch (error) {
-          console.error("Gagal mengubah gambar:", error);
-          alert("Gagal memproses gambar. Coba lagi.");
+          console.error("Gagal mengunggah gambar:", error);
+          alert("Gagal memproses gambar. Pastikan bucket storage Anda 'store-images' sudah publik.");
+      } finally {
+        setIsUploading(prev => ({...prev, [uploadKey]: false}));
       }
   };
 
-  const handleSaveBanners = () => {
-    bannerService.saveBanners(banners);
-    alert('Pengaturan banner berhasil disimpan!');
+  const handleSaveBanners = async () => {
+    try {
+      await bannerService.saveBanners(banners);
+      alert('Pengaturan banner berhasil disimpan!');
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'Gagal menyimpan banner.');
+    }
   };
 
   return (
@@ -67,8 +95,9 @@ const SettingsView: React.FC = () => {
         </nav>
       </div>
 
-      {/* General Settings */}
-      {activeTab === 'general' && (
+      {isLoading && <p className="font-bold text-slate-500">Memuat pengaturan...</p>}
+
+      {!isLoading && activeTab === 'general' && (
         <div className="bg-white p-8 rounded-2xl border border-slate-200">
           <div className="max-w-md space-y-4">
             <div>
@@ -83,15 +112,15 @@ const SettingsView: React.FC = () => {
         </div>
       )}
 
-      {/* Banner Settings */}
-      {activeTab === 'banners' && (
+      {!isLoading && activeTab === 'banners' && (
         <div className="bg-white p-8 rounded-2xl border border-slate-200">
            <div className="space-y-6">
              {banners.map((banner, index) => (
                 <div key={banner.id} className="grid grid-cols-1 md:grid-cols-3 gap-6 p-4 border border-slate-200 rounded-xl">
                     <div className="flex flex-col items-start">
                          <img src={banner.imgUrl} alt="Banner preview" className="w-full aspect-video object-cover rounded-lg mb-2 bg-slate-100" />
-                         <input type="file" accept="image/*" className="text-xs" onChange={(e) => handleBannerImageChange(index, e.target.files?.[0] ?? null)} />
+                         <input type="file" accept="image/*" id={`banner-upload-${index}`} className="hidden" onChange={(e) => handleBannerImageChange(index, e.target.files?.[0] ?? null)} />
+                         <label htmlFor={`banner-upload-${index}`} className="text-xs font-bold text-slate-500 hover:text-slate-900 cursor-pointer">{isUploading[`banner-${index}`] ? 'Mengunggah...' : 'Ubah Gambar'}</label>
                     </div>
                     <div className="md:col-span-2 space-y-3">
                          <input type="text" name="title" value={banner.title} placeholder="Judul Banner" onChange={(e) => handleBannerChange(index, e)} className="w-full p-2 bg-slate-50 rounded-md border border-slate-200 font-bold" />

@@ -1,50 +1,37 @@
-
 import { Banner } from '../types';
+import { supabase } from '../lib/supabaseClient';
 
-const BANNERS_KEY = 'ymg_banners';
+const getBanners = async (): Promise<Banner[]> => {
+    const { data, error } = await supabase
+      .from('banners')
+      .select('*')
+      .order('id', { ascending: true });
 
-const initialBanners: Banner[] = [
-  {
-    id: 'banner-1',
-    imgUrl: "https://picsum.photos/seed/fashion-lifestyle/1200/500",
-    title: "Koleksi Tas Terbaru",
-    subtitle: "Temukan gayamu, bawa ceritamu."
-  },
-  {
-    id: 'banner-2',
-    imgUrl: "https://picsum.photos/seed/urban-adventure/1200/500",
-    title: "Siap Untuk Petualangan Kota",
-    subtitle: "Ransel fungsional dengan sentuhan modern."
-  },
-  {
-    id: 'banner-3',
-    imgUrl: "https://picsum.photos/seed/elegant-style/1200/500",
-    title: "Elegan di Setiap Momen",
-    subtitle: "Tas jinjing premium untuk tampilan profesional."
-  }
-];
+    if (error) {
+        console.error("Error fetching banners:", error);
+        throw new Error('Tidak dapat mengambil data banner');
+    }
+    return data || [];
+};
+  
+const saveBanners = async (banners: Banner[]): Promise<void> => {
+    // Hapus 'created_at' dari setiap item banner sebelum upsert
+    const upsertData = banners.map(b => {
+      const { created_at, ...rest } = b as any;
+      return rest;
+    });
+
+    const { error } = await supabase
+      .from('banners')
+      .upsert(upsertData, { onConflict: 'id' });
+
+    if (error) {
+        console.error("Error saving banners:", error);
+        throw new Error('Gagal menyimpan banner');
+    }
+};
 
 export const bannerService = {
-  getBanners: (): Banner[] => {
-    try {
-      const storedBanners = localStorage.getItem(BANNERS_KEY);
-      if (storedBanners) {
-        return JSON.parse(storedBanners);
-      } else {
-        localStorage.setItem(BANNERS_KEY, JSON.stringify(initialBanners));
-        return initialBanners;
-      }
-    } catch (error) {
-      console.error("Gagal memuat banner:", error);
-      return initialBanners;
-    }
-  },
-  
-  saveBanners: (banners: Banner[]): void => {
-    try {
-      localStorage.setItem(BANNERS_KEY, JSON.stringify(banners));
-    } catch (error) {
-      console.error("Gagal menyimpan banner:", error);
-    }
-  }
+  getBanners,
+  saveBanners,
 };

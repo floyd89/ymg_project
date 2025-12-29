@@ -1,33 +1,33 @@
-
 import { AppSettings } from '../types';
+import { supabase } from '../lib/supabaseClient';
 
-const SETTINGS_KEY = 'ymg_app_settings';
-
-const initialSettings: AppSettings = {
-  whatsAppNumber: '6281234567890', // Default number
-};
+const SETTINGS_ID = 1;
 
 export const settingsService = {
-  getSettings: (): AppSettings => {
-    try {
-      const storedSettings = localStorage.getItem(SETTINGS_KEY);
-      if (storedSettings) {
-        return JSON.parse(storedSettings);
-      } else {
-        localStorage.setItem(SETTINGS_KEY, JSON.stringify(initialSettings));
-        return initialSettings;
-      }
-    } catch (error) {
-      console.error("Gagal memuat pengaturan:", error);
-      return initialSettings;
+  getSettings: async (): Promise<AppSettings> => {
+    const { data, error } = await supabase
+      .from('settings')
+      .select('whatsAppNumber')
+      .eq('id', SETTINGS_ID)
+      .single();
+
+    if (error) {
+      console.error("Error fetching settings:", error);
+      return { whatsAppNumber: '' }; // Kembalikan default jika gagal
     }
+
+    return data || { whatsAppNumber: '' };
   },
 
-  saveSettings: (settings: AppSettings): void => {
-    try {
-      localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
-    } catch (error) {
-      console.error("Gagal menyimpan pengaturan:", error);
+  saveSettings: async (settings: AppSettings): Promise<void> => {
+    const { error } = await supabase
+      .from('settings')
+      .update({ whatsAppNumber: settings.whatsAppNumber })
+      .eq('id', SETTINGS_ID);
+
+    if (error) {
+      console.error("Error saving settings:", error);
+      throw new Error('Gagal menyimpan pengaturan');
     }
   },
 };

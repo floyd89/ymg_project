@@ -1,7 +1,6 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { Product, ProductVariant } from '../types';
-import { fileToBase64 } from '../utils/imageConverter';
+import { uploadImage } from '../utils/imageConverter';
 
 interface ProductEditorProps {
   product: Product | null;
@@ -11,37 +10,40 @@ interface ProductEditorProps {
 
 const ProductEditor: React.FC<ProductEditorProps> = ({ product, onSave, onCancel }) => {
   const [productData, setProductData] = useState<Product | null>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [isUploading, setIsUploading] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
     if (product) {
       setProductData(JSON.parse(JSON.stringify(product)));
     }
   }, [product]);
-
-  const handleImageUpload = async (file: File | null, callback: (base64: string) => void) => {
+  
+  const handleImageUpload = async (file: File | null, uploadKey: string, callback: (url: string) => void) => {
     if (!file) return;
+    setIsUploading(prev => ({...prev, [uploadKey]: true}));
     try {
-      const base64Image = await fileToBase64(file);
-      callback(base64Image);
+      const imageUrl = await uploadImage(file);
+      callback(imageUrl);
     } catch (error) {
-      console.error("Error converting file to base64", error);
-      alert("Gagal memproses gambar.");
+      console.error("Error uploading image:", error);
+      alert("Gagal mengunggah gambar. Pastikan bucket storage Anda 'store-images' sudah publik.");
+    } finally {
+        setIsUploading(prev => ({...prev, [uploadKey]: false}));
     }
   };
 
   const handleMainImageChange = (file: File | null) => {
-    handleImageUpload(file, (base64) => {
-      setProductData(prev => prev ? { ...prev, imageUrl: base64 } : null);
+    handleImageUpload(file, 'main', (url) => {
+      setProductData(prev => prev ? { ...prev, imageUrl: url } : null);
     });
   };
 
   const handleVariantImageChange = (index: number, file: File | null) => {
-    handleImageUpload(file, (base64) => {
+    handleImageUpload(file, `variant-${index}`, (url) => {
       setProductData(prev => {
         if (!prev) return null;
         const newVariants = [...prev.variants];
-        newVariants[index].imageUrl = base64;
+        newVariants[index].imageUrl = url;
         return { ...prev, variants: newVariants };
       });
     });
@@ -95,6 +97,7 @@ const ProductEditor: React.FC<ProductEditorProps> = ({ product, onSave, onCancel
   };
 
   if (!productData) return null;
+  const isAnyUploading = Object.values(isUploading).some(status => status);
 
   return (
     <div className="bg-white p-6 md:p-10 rounded-2xl border border-slate-200 shadow-sm max-w-4xl mx-auto">
@@ -112,8 +115,8 @@ const ProductEditor: React.FC<ProductEditorProps> = ({ product, onSave, onCancel
               </div>
               <div className="flex flex-col items-center">
                   <img src={productData.imageUrl || 'https://via.placeholder.com/150'} alt="Gambar utama" className="w-32 h-32 object-cover rounded-lg bg-slate-100 mb-2" />
-                  <input type="file" accept="image/*" ref={fileInputRef} onChange={(e) => handleMainImageChange(e.target.files?.[0] ?? null)} className="hidden"/>
-                  <button type="button" onClick={() => fileInputRef.current?.click()} className="text-xs font-bold text-slate-500 hover:text-slate-900">Ubah Gambar Utama</button>
+                  <input type="file" accept="image/*" id="main-image-upload" onChange={(e) => handleMainImageChange(e.target.files?.[0] ?? null)} className="hidden"/>
+                  <label htmlFor="main-image-upload" className="text-xs font-bold text-slate-500 hover:text-slate-900 cursor-pointer">{isUploading['main'] ? 'Mengunggah...' : 'Ubah Gambar Utama'}</label>
               </div>
           </div>
           <textarea name="shortDescription" value={productData.shortDescription} onChange={handleChange} placeholder="Deskripsi Singkat" required rows={2} className="w-full p-3 bg-slate-50 rounded-lg border border-slate-200 font-bold focus:ring-2 focus:ring-slate-900 focus:border-slate-900 outline-none" />
@@ -127,7 +130,7 @@ const ProductEditor: React.FC<ProductEditorProps> = ({ product, onSave, onCancel
                   <div className="flex flex-col items-center">
                     <img src={variant.imageUrl || 'https://via.placeholder.com/80'} alt={variant.colorName} className="w-14 h-14 rounded-md object-cover bg-slate-200 mb-1" />
                     <input type="file" accept="image/*" id={`variant-img-${index}`} onChange={e => handleVariantImageChange(index, e.target.files?.[0] ?? null)} className="hidden"/>
-                    <label htmlFor={`variant-img-${index}`} className="text-[10px] font-bold text-slate-500 cursor-pointer hover:underline">Upload</label>
+                    <label htmlFor={`variant-img-${index}`} className="text-[10px] font-bold text-slate-500 cursor-pointer hover:underline">{isUploading[`variant-${index}`] ? 'Loading...' : 'Upload'}</label>
                   </div>
                   <input type="text" name="colorName" value={variant.colorName} onChange={e => handleVariantChange(index, e)} placeholder="Nama Warna" required className="md:col-span-2 p-2 rounded-md border-slate-300 font-medium text-sm" />
                   <input type="color" name="colorHex" value={variant.colorHex} onChange={e => handleVariantChange(index, e)} className="h-10 w-10 p-0 border-none rounded-md cursor-pointer" />
@@ -142,7 +145,9 @@ const ProductEditor: React.FC<ProductEditorProps> = ({ product, onSave, onCancel
 
         <div className="flex items-center justify-end gap-4 mt-10">
           <button type="button" onClick={onCancel} className="px-6 py-3 bg-slate-100 text-slate-800 rounded-xl text-sm font-bold hover:bg-slate-200">Batal</button>
-          <button type="submit" className="px-6 py-3 bg-slate-900 text-white rounded-xl text-sm font-bold hover:bg-slate-700">Simpan Produk</button>
+          <button type="submit" disabled={isAnyUploading} className="px-6 py-3 bg-slate-900 text-white rounded-xl text-sm font-bold hover:bg-slate-700 disabled:bg-slate-400 disabled:cursor-wait">
+            {isAnyUploading ? 'Menunggu Unggahan...' : 'Simpan Produk'}
+            </button>
         </div>
       </form>
     </div>

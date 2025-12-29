@@ -1,68 +1,56 @@
-
 import { Product } from '../types';
+import { supabase } from '../lib/supabaseClient';
 
-const LOCAL_STORAGE_KEY = 'ymg_products_catalog';
+const getProducts = async (): Promise<Product[]> => {
+  const { data, error } = await supabase
+    .from('products')
+    .select('*')
+    .order('created_at', { ascending: false });
 
-const initialProducts: Product[] = [
-  {
-    id: 'urban-explorer-backpack',
-    name: 'Urban Explorer Backpack',
-    category: 'Backpack',
-    price: 'Rp 450.000',
-    shortDescription: 'Ransel serbaguna dengan desain modern untuk aktivitas harian dan perjalanan.',
-    fullDescription: 'Didesain untuk petualang kota, Urban Explorer Backpack memadukan gaya dan fungsi. Dengan kompartemen laptop empuk dan banyak saku, tas ini siap menemani semua kesibukan Anda dari kantor hingga akhir pekan.',
-    highlights: [],
-    imageUrl: 'https://picsum.photos/seed/backpack-black/800/600',
-    variants: [
-      { id: 'ueb-black', colorName: 'Hitam Arang', colorHex: '#333333', imageUrl: 'https://picsum.photos/seed/backpack-black/800/600' },
-      { id: 'ueb-navy', colorName: 'Biru Dongker', colorHex: '#1E3A8A', imageUrl: 'https://picsum.photos/seed/backpack-navy/800/600' },
-      { id: 'ueb-grey', colorName: 'Abu-abu Batu', colorHex: '#A0AEC0', imageUrl: 'https://picsum.photos/seed/backpack-grey/800/600' },
-    ]
-  },
-];
-
-const getProducts = (): Product[] => {
-  try {
-    const data = window.localStorage.getItem(LOCAL_STORAGE_KEY);
-    if (data) {
-      return JSON.parse(data);
-    } else {
-      window.localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(initialProducts));
-      return initialProducts;
-    }
-  } catch (error) {
-    console.error("Gagal membaca produk dari localStorage:", error);
-    return initialProducts;
+  if (error) {
+    console.error("Error fetching products:", error);
+    throw new Error('Tidak dapat mengambil data produk');
   }
+  // Supabase mungkin mengembalikan null jika tabel kosong
+  return (data || []).map(p => ({
+    ...p,
+    variants: p.variants || [],
+    highlights: p.highlights || [],
+  }));
 };
 
-const saveProduct = (productToSave: Product): void => {
-  let products = getProducts();
-  const existingProductIndex = products.findIndex(p => p.id === productToSave.id);
+const saveProduct = async (productToSave: Product): Promise<Product> => {
+  // Hapus properti 'created_at' jika ada, karena ini diatur oleh database
+  // FIX: Cast productToSave to a type that includes the optional `created_at` property, which Supabase adds but is not in our `Product` type. This prevents a TypeScript error.
+  const { created_at, ...upsertData } = productToSave as Product & { created_at?: string };
 
-  if (existingProductIndex > -1) {
-    products[existingProductIndex] = productToSave;
-  } else {
-    // Make sure new product ID is unique
-    productToSave.id = productToSave.id.startsWith('new-product-') ? `prod-${Date.now()}` : productToSave.id;
-    products.push(productToSave);
+  if (upsertData.id.startsWith('new-product-')) {
+    upsertData.id = `prod-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
+  }
+  
+  const { data, error } = await supabase
+    .from('products')
+    .upsert(upsertData, { onConflict: 'id' })
+    .select()
+    .single();
+
+  if (error) {
+    console.error("Error saving product:", error);
+    throw new Error('Gagal menyimpan produk');
   }
 
-  try {
-    window.localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(products));
-  } catch (error) {
-    console.error("Gagal menyimpan produk ke localStorage:", error);
-  }
+  return data;
 };
 
-const deleteProduct = (productId: string): void => {
-  let products = getProducts();
-  const updatedProducts = products.filter(p => p.id !== productId);
-
-  try {
-    window.localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(updatedProducts));
-  } catch (error) {
-    console.error("Gagal menghapus produk dari localStorage:", error);
+const deleteProduct = async (productId: string): Promise<void> => {
+  const { error } = await supabase
+    .from('products')
+    .delete()
+    .eq('id', productId);
+  
+  if (error) {
+    console.error("Error deleting product:", error);
+    throw new Error('Gagal menghapus produk');
   }
 };
 

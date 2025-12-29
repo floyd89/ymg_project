@@ -14,7 +14,15 @@ const Banner: React.FC<BannerProps> = ({ onExploreClick }) => {
   const touchStartX = useRef(0);
 
   useEffect(() => {
-    setBannerItems(bannerService.getBanners());
+    const fetchBanners = async () => {
+      try {
+        const banners = await bannerService.getBanners();
+        setBannerItems(banners);
+      } catch (error) {
+        console.error("Gagal memuat banners:", error);
+      }
+    };
+    fetchBanners();
   }, []);
 
   const resetTimeout = useCallback(() => {
@@ -59,7 +67,11 @@ const Banner: React.FC<BannerProps> = ({ onExploreClick }) => {
   };
 
   if (bannerItems.length === 0) {
-    return null; // Don't render banner if there's no data
+    return (
+      <section className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="relative aspect-[2/1] md:aspect-[3/1] rounded-3xl bg-slate-100 animate-pulse"></div>
+      </section>
+    );
   }
 
   return (

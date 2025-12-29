@@ -1,23 +1,20 @@
 
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
 import FloatingBottomNav from './components/FloatingBottomNav';
 import HomeView from './views/HomeView';
 import DetailView from './views/DetailView';
 import AboutView from './views/AboutView';
-import AdminLayout from './views/AdminView'; // Renamed to AdminLayout
+import AdminLayout from './views/AdminView';
 import { View, Product, ProductVariant } from './types';
 import { productService } from './services/productService';
+import { supabase } from './lib/supabaseClient';
 
 const App: React.FC = () => {
   const [pathname, setPathname] = useState(window.location.pathname);
 
   useEffect(() => {
-    // Analytics tracker simulation
-    const currentPageLoads = parseInt(localStorage.getItem('ymg_pageLoads') || '0', 10);
-    localStorage.setItem('ymg_pageLoads', (currentPageLoads + 1).toString());
-
     const onLocationChange = () => {
       setPathname(window.location.pathname);
     };
@@ -39,17 +36,44 @@ const App: React.FC = () => {
   const [selectedProductId, setSelectedProductId] = useState<string | null>(null);
   const [selectedVariant, setSelectedVariant] = useState<ProductVariant | null>(null);
 
-  useEffect(() => {
-    setLoading(true);
+  const loadProducts = useCallback(async () => {
+    // Tidak mengatur loading ke true di sini agar pembaruan real-time tidak berkedip
+    setError(null);
     try {
-      setProducts(productService.getProducts());
+      const fetchedProducts = await productService.getProducts();
+      setProducts(fetchedProducts);
     } catch (err) {
-      setError('Gagal memuat produk.');
+      setError(err instanceof Error ? err.message : 'Gagal memuat produk.');
       console.error(err);
     } finally {
-      setLoading(false);
+      setLoading(false); // Hanya matikan loading setelah pengambilan pertama
     }
   }, []);
+
+
+  useEffect(() => {
+    // Pengambilan data awal
+    loadProducts();
+
+    // Membuat channel komunikasi real-time ke tabel 'products'
+    const channel = supabase
+      .channel('public:products')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'products' },
+        (payload) => {
+          console.log('Perubahan terdeteksi di storefront!', payload);
+          // Ketika ada perubahan, ambil ulang semua data untuk memastikan konsistensi
+          loadProducts();
+        }
+      )
+      .subscribe();
+
+    // Membersihkan koneksi saat komponen tidak lagi digunakan
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [loadProducts]);
 
   const selectedProduct = useMemo(() => {
     return products.find(p => p.id === selectedProductId) || null;
@@ -57,10 +81,6 @@ const App: React.FC = () => {
 
   const handleProductClick = (id: string) => {
     if (products.find(p => p.id === id)) {
-      // Analytics tracker simulation
-      const currentProductClicks = parseInt(localStorage.getItem('ymg_productClicks') || '0', 10);
-      localStorage.setItem('ymg_productClicks', (currentProductClicks + 1).toString());
-
       setSelectedProductId(id);
       setSelectedVariant(null);
       setCurrentView('detail');
@@ -83,8 +103,8 @@ const App: React.FC = () => {
   };
 
   const renderContent = () => {
-    if (loading) return <div className="flex-grow flex items-center justify-center"><p>Memuat...</p></div>;
-    if (error) return <div className="flex-grow flex items-center justify-center"><p className="text-red-500">{error}</p></div>;
+    if (loading) return <div className="flex-grow flex items-center justify-center min-h-[50vh]"><p className="font-bold text-slate-500">Memuat koleksi produk...</p></div>;
+    if (error) return <div className="flex-grow flex items-center justify-center min-h-[50vh]"><p className="text-red-500 font-bold bg-red-50 p-4 rounded-lg">{error}</p></div>;
 
     switch (currentView) {
       case 'home': return <HomeView products={products} onProductClick={handleProductClick} onGoProducts={navigateToProducts} />;

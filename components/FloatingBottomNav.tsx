@@ -14,7 +14,11 @@ const FloatingBottomNav: React.FC<FloatingBottomNavProps> = ({ onHomeClick, onAb
   const [whatsAppNumber, setWhatsAppNumber] = useState('');
 
   useEffect(() => {
-    setWhatsAppNumber(settingsService.getSettings().whatsAppNumber);
+    const fetchSettings = async () => {
+      const settings = await settingsService.getSettings();
+      setWhatsAppNumber(settings.whatsAppNumber);
+    };
+    fetchSettings();
   }, []);
 
   const handleWhatsAppClick = () => {
