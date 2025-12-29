@@ -115,7 +115,15 @@ const ProductEditor: React.FC<ProductEditorProps> = ({ product, onSave, onCancel
                 </div>
               </div>
               <div className="flex flex-col items-center justify-center">
-                  <img src={productData.imageUrl || 'https://via.placeholder.com/150'} alt="Gambar utama" className="w-32 h-32 object-cover rounded-lg bg-slate-100 mb-3" />
+                  {productData.imageUrl ? (
+                    <img src={productData.imageUrl} alt="Gambar utama" className="w-32 h-32 object-cover rounded-lg bg-slate-100 mb-3" />
+                  ) : (
+                    <div className="w-32 h-32 rounded-lg bg-slate-100 mb-3 flex items-center justify-center border-2 border-dashed border-slate-300">
+                      <svg className="w-10 h-10 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 4v16m8-8H4" />
+                      </svg>
+                    </div>
+                  )}
                   <input type="file" accept="image/*" id="main-image-upload" onChange={(e) => handleMainImageChange(e.target.files?.[0] ?? null)} className="hidden"/>
                   <label htmlFor="main-image-upload" className="flex items-center text-xs font-bold text-slate-500 hover:text-slate-900 cursor-pointer transition-colors">
                     <svg className="w-4 h-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" /></svg>
@@ -131,7 +139,15 @@ const ProductEditor: React.FC<ProductEditorProps> = ({ product, onSave, onCancel
               {productData.variants.map((variant, index) => (
                 <div key={variant.id} className="grid grid-cols-1 md:grid-cols-6 gap-4 items-center p-4 bg-slate-50 rounded-xl border border-slate-200">
                   <div className="flex flex-col items-center">
-                    <img src={variant.imageUrl || 'https://via.placeholder.com/80'} alt={variant.colorName} className="w-14 h-14 rounded-md object-cover bg-slate-200 mb-1" />
+                    {variant.imageUrl ? (
+                      <img src={variant.imageUrl} alt={variant.colorName} className="w-14 h-14 rounded-md object-cover bg-slate-200 mb-1" />
+                    ) : (
+                      <div className="w-14 h-14 rounded-md bg-slate-200 mb-1 flex items-center justify-center border-2 border-dashed border-slate-300">
+                          <svg className="w-6 h-6 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 4v16m8-8H4" />
+                          </svg>
+                      </div>
+                    )}
                     <input type="file" accept="image/*" id={`variant-img-${index}`} onChange={e => handleVariantImageChange(index, e.target.files?.[0] ?? null)} className="hidden"/>
                     <label htmlFor={`variant-img-${index}`} className="flex items-center text-[10px] font-bold text-slate-500 cursor-pointer hover:text-slate-900 transition-colors">
                       <svg className="w-3 h-3 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" /></svg>
