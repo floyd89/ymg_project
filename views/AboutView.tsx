@@ -85,10 +85,10 @@ const AboutView: React.FC<AboutViewProps> = ({ onBack }) => {
   }
 
   return (
-    <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12 md:py-24 flex flex-col items-center">
+    <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-24 flex flex-col items-center">
       <button 
         onClick={onBack}
-        className="group mb-12 self-start inline-flex items-center gap-3 text-[10px] font-black text-slate-400 hover:text-slate-900 transition-all uppercase tracking-[0.25em]"
+        className="group mb-8 self-start inline-flex items-center gap-3 text-[10px] font-black text-slate-400 hover:text-slate-900 transition-all uppercase tracking-[0.25em]"
       >
         <div className="w-10 h-10 rounded-full border border-slate-100 flex items-center justify-center bg-white group-hover:border-slate-900 group-hover:bg-slate-900 group-hover:text-white transition-all duration-300 shadow-sm group-hover:shadow-md">
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -98,8 +98,8 @@ const AboutView: React.FC<AboutViewProps> = ({ onBack }) => {
         <span>Kembali</span>
       </button>
 
-      <div className="w-full flex flex-col items-center justify-center space-y-8 animate-view-enter">
-        <div className="w-40 h-40 md:w-48 md:h-48 rounded-[1.5rem] overflow-hidden bg-slate-100">
+      <div className="w-full flex flex-col items-center justify-center space-y-6 animate-view-enter">
+        <div className="w-32 h-32 md:w-48 md:h-48 rounded-[1.5rem] overflow-hidden bg-slate-100">
           <img 
             src={settings.storeLogoUrl || "https://via.placeholder.com/600"} 
             alt={settings.storeName || "Store Logo"}
@@ -108,7 +108,7 @@ const AboutView: React.FC<AboutViewProps> = ({ onBack }) => {
         </div>
 
         <div className="text-center space-y-2">
-          <h1 className="text-3xl md:text-5xl font-black text-slate-900 tracking-tighter">
+          <h1 className="text-2xl md:text-5xl font-black text-slate-900 tracking-tighter">
             {settings.storeName}
           </h1>
           <p className="text-slate-400 text-xs md:text-sm font-black uppercase tracking-[0.3em]">
