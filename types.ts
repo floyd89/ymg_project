@@ -28,6 +28,11 @@ export interface Banner {
 
 export interface AppSettings {
   whatsAppNumber: string;
+  storeName?: string | null;
+  storeTagline?: string | null;
+  storeLogoUrl?: string | null;
+  instagramUrl?: string | null;
+  tiktokUrl?: string | null;
 }
 
 export type View = 'home' | 'detail' | 'about';

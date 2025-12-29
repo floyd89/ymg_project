@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { settingsService } from '../../services/settingsService';
 import { bannerService } from '../../services/bannerService';
@@ -8,7 +9,7 @@ import AdminNotice from '../../components/admin/AdminNotice';
 const SettingsView: React.FC = () => {
   const [settings, setSettings] = useState<AppSettings>({ whatsAppNumber: '' });
   const [banners, setBanners] = useState<Banner[]>([]);
-  const [activeTab, setActiveTab] = useState<'general' | 'banners'>('general');
+  const [activeTab, setActiveTab] = useState<'general' | 'banners' | 'profile'>('general');
   const [isLoading, setIsLoading] = useState(true);
   const [isUploading, setIsUploading] = useState<Record<string, boolean>>({});
 
@@ -36,11 +37,25 @@ const SettingsView: React.FC = () => {
     const { name, value } = e.target;
     setSettings(prev => ({ ...prev, [name]: value }));
   };
+  
+  const handleLogoUpload = async (file: File | null) => {
+    if (!file) return;
+    setIsUploading(prev => ({ ...prev, logo: true }));
+    try {
+      const imageUrl = await uploadImage(file);
+      setSettings(prev => ({ ...prev, storeLogoUrl: imageUrl }));
+    } catch (error) {
+      alert("Gagal mengunggah logo.");
+      console.error(error);
+    } finally {
+      setIsUploading(prev => ({ ...prev, logo: false }));
+    }
+  };
 
   const handleSaveSettings = async () => {
     try {
       await settingsService.saveSettings(settings);
-      alert('Pengaturan umum berhasil disimpan!');
+      alert('Pengaturan berhasil disimpan!');
     } catch (err) {
       alert(err instanceof Error ? err.message : 'Gagal menyimpan pengaturan.');
     }
@@ -91,6 +106,7 @@ const SettingsView: React.FC = () => {
       <div className="border-b border-slate-200 mb-6 mt-6">
         <nav className="-mb-px flex gap-6">
           <button onClick={() => setActiveTab('general')} className={`py-3 px-1 border-b-2 font-bold text-sm ${activeTab === 'general' ? 'border-slate-900 text-slate-900' : 'border-transparent text-slate-500 hover:border-slate-300'}`}>Umum</button>
+          <button onClick={() => setActiveTab('profile')} className={`py-3 px-1 border-b-2 font-bold text-sm ${activeTab === 'profile' ? 'border-slate-900 text-slate-900' : 'border-transparent text-slate-500 hover:border-slate-300'}`}>Profil</button>
           <button onClick={() => setActiveTab('banners')} className={`py-3 px-1 border-b-2 font-bold text-sm ${activeTab === 'banners' ? 'border-slate-900 text-slate-900' : 'border-transparent text-slate-500 hover:border-slate-300'}`}>Banner</button>
         </nav>
       </div>
@@ -108,6 +124,41 @@ const SettingsView: React.FC = () => {
           </div>
           <div className="mt-6">
             <button onClick={handleSaveSettings} className="px-5 py-2 bg-slate-900 text-white rounded-lg text-sm font-bold hover:bg-slate-700">Simpan Pengaturan</button>
+          </div>
+        </div>
+      )}
+
+      {!isLoading && activeTab === 'profile' && (
+        <div className="bg-white p-8 rounded-2xl border border-slate-200">
+          <div className="max-w-md space-y-6">
+            <div className="flex items-center gap-6">
+                <img src={settings.storeLogoUrl || 'https://via.placeholder.com/100'} alt="Logo Toko" className="w-24 h-24 object-cover rounded-full bg-slate-100" />
+                <div>
+                  <label htmlFor="logo-upload" className="text-sm font-bold text-slate-700">Logo Toko</label>
+                  <p className="text-xs text-slate-400 mb-2">Rekomendasi ukuran 1:1 (persegi).</p>
+                  <input type="file" accept="image/*" id="logo-upload" className="hidden" onChange={(e) => handleLogoUpload(e.target.files?.[0] ?? null)} />
+                  <label htmlFor="logo-upload" className="px-4 py-2 bg-slate-100 text-slate-800 rounded-lg text-xs font-bold hover:bg-slate-200 cursor-pointer">{isUploading['logo'] ? 'Mengunggah...' : 'Pilih Gambar'}</label>
+                </div>
+            </div>
+            <div>
+              <label htmlFor="storeName" className="text-sm font-bold text-slate-700">Nama Toko</label>
+              <input type="text" id="storeName" name="storeName" value={settings.storeName || ''} onChange={handleSettingsChange} className="w-full p-3 mt-2 bg-slate-50 rounded-lg border border-slate-200 font-bold focus:ring-2 focus:ring-slate-900 focus:border-slate-900 outline-none" />
+            </div>
+             <div>
+              <label htmlFor="storeTagline" className="text-sm font-bold text-slate-700">Tagline/Slogan Toko</label>
+              <input type="text" id="storeTagline" name="storeTagline" value={settings.storeTagline || ''} onChange={handleSettingsChange} className="w-full p-3 mt-2 bg-slate-50 rounded-lg border border-slate-200 font-bold focus:ring-2 focus:ring-slate-900 focus:border-slate-900 outline-none" />
+            </div>
+            <div>
+              <label htmlFor="instagramUrl" className="text-sm font-bold text-slate-700">URL Instagram</label>
+              <input type="text" id="instagramUrl" name="instagramUrl" value={settings.instagramUrl || ''} onChange={handleSettingsChange} placeholder="https://instagram.com/username" className="w-full p-3 mt-2 bg-slate-50 rounded-lg border border-slate-200 font-bold focus:ring-2 focus:ring-slate-900 focus:border-slate-900 outline-none" />
+            </div>
+            <div>
+              <label htmlFor="tiktokUrl" className="text-sm font-bold text-slate-700">URL TikTok</label>
+              <input type="text" id="tiktokUrl" name="tiktokUrl" value={settings.tiktokUrl || ''} onChange={handleSettingsChange} placeholder="https://tiktok.com/@username" className="w-full p-3 mt-2 bg-slate-50 rounded-lg border border-slate-200 font-bold focus:ring-2 focus:ring-slate-900 focus:border-slate-900 outline-none" />
+            </div>
+          </div>
+          <div className="mt-8">
+            <button onClick={handleSaveSettings} className="px-5 py-2 bg-slate-900 text-white rounded-lg text-sm font-bold hover:bg-slate-700">Simpan Profil</button>
           </div>
         </div>
       )}
