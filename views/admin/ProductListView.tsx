@@ -11,7 +11,8 @@ const ProductListView: React.FC = () => {
   const [products, setProducts] = useState<Product[]>([]);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null); // Untuk error saat memuat
+  const [saveError, setSaveError] = useState<string | null>(null); // Untuk error saat menyimpan
 
   const loadProducts = useCallback(async () => {
     // Tidak set loading=true di sini, agar update real-time tidak berkedip
@@ -71,15 +72,18 @@ const ProductListView: React.FC = () => {
   };
 
   const handleSave = async (product: Product) => {
+    setSaveError(null); // Bersihkan error sebelumnya
     try {
       await productService.saveProduct(product);
       setEditingProduct(null);
-      // Data akan diperbarui secara otomatis oleh subscription,
-      // tetapi kita panggil manual untuk memastikan pembaruan instan
       await loadProducts(); 
       alert('Produk berhasil disimpan!');
     } catch (err) {
-      alert(err instanceof Error ? err.message : 'Terjadi kesalahan saat menyimpan produk.');
+      if (err instanceof Error && err.message.includes("Could not find the 'imageUrls' column")) {
+        setSaveError('SCHEMA_MISMATCH_IMAGEURLS');
+      } else {
+        alert(err instanceof Error ? err.message : 'Terjadi kesalahan saat menyimpan produk.');
+      }
     }
   };
 
@@ -87,7 +91,6 @@ const ProductListView: React.FC = () => {
     if (window.confirm('Apakah Anda yakin ingin menghapus produk ini? Ini tidak dapat dibatalkan.')) {
       try {
         await productService.deleteProduct(productId);
-        // Data akan diperbarui otomatis, tapi kita panggil manual untuk instan
         await loadProducts(); 
         alert('Produk berhasil dihapus!');
       } catch (err)
@@ -103,7 +106,12 @@ const ProductListView: React.FC = () => {
         <ProductEditor
           product={editingProduct}
           onSave={handleSave}
-          onCancel={() => setEditingProduct(null)}
+          onCancel={() => {
+            setEditingProduct(null);
+            setSaveError(null); // Juga bersihkan error saat dibatalkan
+          }}
+          saveError={saveError}
+          onDismissSaveError={() => setSaveError(null)}
         />
       </div>
     );
@@ -126,10 +134,8 @@ const ProductListView: React.FC = () => {
     return null;
   }
   
-  // Fungsi helper untuk mendapatkan URL gambar yang aman untuk ditampilkan
   const getSafeImageUrl = (product: Product): string => {
     const placeholder = 'https://via.placeholder.com/100';
-    // Cek jika imageUrls ada, adalah array, dan elemen pertamanya adalah string yang tidak kosong
     if (product.imageUrls && Array.isArray(product.imageUrls) && product.imageUrls[0]) {
       return product.imageUrls[0];
     }

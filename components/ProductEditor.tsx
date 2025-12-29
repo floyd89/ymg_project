@@ -3,14 +3,17 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Product, ProductVariant } from '../types';
 import { uploadImage } from '../utils/imageConverter';
 import SetupNotice from './admin/SetupNotice';
+import SchemaNotice from './admin/SchemaNotice';
 
 interface ProductEditorProps {
   product: Product | null;
   onSave: (product: Product) => void;
   onCancel: () => void;
+  saveError: string | null;
+  onDismissSaveError: () => void;
 }
 
-const ProductEditor: React.FC<ProductEditorProps> = ({ product, onSave, onCancel }) => {
+const ProductEditor: React.FC<ProductEditorProps> = ({ product, onSave, onCancel, saveError, onDismissSaveError }) => {
   const [productData, setProductData] = useState<Product | null>(null);
   const [isUploading, setIsUploading] = useState<Record<string, boolean>>({});
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
@@ -151,6 +154,7 @@ const ProductEditor: React.FC<ProductEditorProps> = ({ product, onSave, onCancel
         <h2 className="text-2xl font-black text-slate-900 mb-8">{product?.id.startsWith('new-product') ? 'Tambah Produk Baru' : 'Edit Produk'}</h2>
         
         {uploadError === 'BUCKET_NOT_FOUND' && <SetupNotice onDismiss={() => setUploadError(null)} />}
+        {saveError === 'SCHEMA_MISMATCH_IMAGEURLS' && <SchemaNotice onDismiss={onDismissSaveError} />}
 
         <div className="space-y-8">
           {/* Section: Basic Info */}
