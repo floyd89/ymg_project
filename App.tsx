@@ -162,10 +162,7 @@ const App: React.FC = () => {
         activeProduct={currentView === 'detail' ? selectedProduct : null}
         activeVariant={currentView === 'detail' ? selectedVariant : null}
       />
-      <Footer 
-        product={currentView === 'detail' ? selectedProduct : null}
-        variant={currentView === 'detail' ? selectedVariant : null}
-      />
+      <Footer />
     </div>
   );
 };
