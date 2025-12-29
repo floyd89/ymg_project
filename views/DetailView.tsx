@@ -1,5 +1,4 @@
-
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Product, ProductVariant } from '../types';
 import { formatCurrency } from '../utils/formatters';
 import { settingsService } from '../services/settingsService';
@@ -53,14 +52,14 @@ const DetailView: React.FC<DetailViewProps> = ({ product, selectedVariant, onVar
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-       <button onClick={onBack} className="my-6 md:my-10 group inline-flex items-center gap-3 text-[10px] font-black text-slate-600 hover:text-slate-900 transition-all uppercase tracking-[0.25em]">
+       <button onClick={onBack} className="my-6 md:hidden group inline-flex items-center gap-3 text-[10px] font-black text-slate-600 hover:text-slate-900 transition-all uppercase tracking-[0.25em]">
           <div className="w-10 h-10 rounded-full border border-slate-900/10 flex items-center justify-center bg-white/70 backdrop-blur-sm group-hover:border-slate-900 group-hover:bg-slate-900 group-hover:text-white transition-all duration-300 shadow-sm group-hover:shadow-md">
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>
           </div>
           <span className="bg-white/70 backdrop-blur-sm px-3 py-1.5 rounded-full shadow-sm border border-slate-900/5">Kembali</span>
       </button>
 
-      <div className="grid grid-cols-1 md:grid-cols-12 md:gap-8 lg:gap-12">
+      <div className="grid grid-cols-1 md:grid-cols-12 md:gap-8 lg:gap-12 md:pt-12">
         <div className="md:col-span-7 lg:col-span-7">
           <div className="md:sticky md:top-24 self-start">
              <div className="w-full aspect-square bg-slate-100 rounded-2xl overflow-hidden">
