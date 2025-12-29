@@ -20,6 +20,7 @@ const DetailView: React.FC<DetailViewProps> = ({ product, selectedVariant, onVar
   }, [product, selectedVariant, onVariantChange]);
 
   const displayPrice = selectedVariant?.price || product.price;
+  const hasVariants = product.variants.length > 0;
 
   return (
     <div className="relative bg-white">
@@ -42,22 +43,24 @@ const DetailView: React.FC<DetailViewProps> = ({ product, selectedVariant, onVar
           <h1 className="text-2xl md:text-4xl font-black text-slate-900 mb-2 leading-tight tracking-tighter">{product.name}</h1>
           <div className="text-2xl md:text-3xl font-black text-slate-900 mb-6 tracking-tight">{formatCurrency(displayPrice)}</div>
 
-          <div className="mb-8">
-            <h3 className="text-[10px] font-black text-slate-900 uppercase tracking-widest mb-4">
-              Varian Warna {selectedVariant?.price && <span className="text-slate-400">(Harga mungkin berbeda)</span>}
-            </h3>
-            <div className="flex flex-wrap items-center gap-3">
-              {product.variants.map(variant => (
-                <button key={variant.id} onClick={() => onVariantChange(variant)} className={`flex items-center gap-3 pl-2 pr-4 py-2 rounded-full border-2 transition-all duration-300 text-xs font-bold ${selectedVariant?.id === variant.id ? 'bg-slate-900 text-white border-slate-900' : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100 hover:border-slate-300'}`} aria-label={`Pilih warna ${variant.colorName}`}>
-                  <span className={`w-5 h-5 rounded-full block ${selectedVariant?.id === variant.id ? 'ring-2 ring-white/60' : ''}`} style={{ backgroundColor: variant.colorHex }} />
-                  <span>{variant.colorName}</span>
-                </button>
-              ))}
+          {hasVariants && (
+            <div className="mb-8">
+              <h3 className="text-[10px] font-black text-slate-900 uppercase tracking-widest mb-4">
+                Varian Warna {selectedVariant?.price && <span className="text-slate-400">(Harga mungkin berbeda)</span>}
+              </h3>
+              <div className="flex flex-wrap items-center gap-3">
+                {product.variants.map(variant => (
+                  <button key={variant.id} onClick={() => onVariantChange(variant)} className={`flex items-center gap-3 pl-2 pr-4 py-2 rounded-full border-2 transition-all duration-300 text-xs font-bold ${selectedVariant?.id === variant.id ? 'bg-slate-900 text-white border-slate-900' : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100 hover:border-slate-300'}`} aria-label={`Pilih warna ${variant.colorName}`}>
+                    <span className={`w-5 h-5 rounded-full block ${selectedVariant?.id === variant.id ? 'ring-2 ring-white/60' : ''}`} style={{ backgroundColor: variant.colorHex }} />
+                    <span>{variant.colorName}</span>
+                  </button>
+                ))}
+              </div>
             </div>
-          </div>
+          )}
           
           <div className="mb-8">
-            <p className="text-slate-500 leading-relaxed text-sm md:text-base font-medium">{product.fullDescription}</p>
+            <p className="text-slate-500 leading-relaxed text-sm md:text-base font-medium whitespace-pre-wrap">{product.fullDescription}</p>
           </div>
         </div>
       </div>

@@ -25,17 +25,29 @@ const FloatingBottomNav: React.FC<FloatingBottomNavProps> = ({ onHomeClick, onAb
   const handleWhatsAppClick = () => {
     if (!whatsAppNumber) return;
     let message;
-    if (activeProduct && activeVariant) {
-      const priceToDisplay = activeVariant.price || activeProduct.price;
-      message = encodeURIComponent(`Halo YMG Official Store, saya tertarik dengan produk: ${activeProduct.name} (Warna: ${activeVariant.colorName}, Harga: ${formatCurrency(priceToDisplay)}). Apakah produk ini masih tersedia?`);
-    } else {
-      message = encodeURIComponent("Halo YMG Official Store, saya ingin bertanya mengenai koleksi tas Anda.");
+    if (activeProduct) { // On detail page
+        const hasVariants = activeProduct.variants.length > 0;
+        if (!hasVariants) { // No variants, buy directly
+            const priceToDisplay = activeProduct.price;
+            message = encodeURIComponent(`Halo YMG Official Store, saya tertarik dengan produk: ${activeProduct.name} (Harga: ${formatCurrency(priceToDisplay)}). Apakah produk ini masih tersedia?`);
+        } else if (activeVariant) { // Has variants and one is selected
+            const priceToDisplay = activeVariant.price || activeProduct.price;
+            message = encodeURIComponent(`Halo YMG Official Store, saya tertarik dengan produk: ${activeProduct.name} (Warna: ${activeVariant.colorName}, Harga: ${formatCurrency(priceToDisplay)}). Apakah produk ini masih tersedia?`);
+        } else {
+            return; // Should not happen if button is disabled
+        }
+    } else { // On home page (general chat button)
+        message = encodeURIComponent("Halo YMG Official Store, saya ingin bertanya mengenai koleksi tas Anda.");
     }
     window.open(`https://wa.me/${whatsAppNumber}?text=${message}`, '_blank');
   };
 
+
   if (activeProduct) {
     const displayPrice = activeVariant?.price || activeProduct.price;
+    const hasVariants = activeProduct.variants.length > 0;
+    const isReadyToBuy = !hasVariants || !!activeVariant;
+
     return (
       <div className="fixed bottom-0 left-0 w-full z-50 md:hidden bg-white/95 backdrop-blur-xl border-t border-slate-100 shadow-[0_-5px_30px_rgba(0,0,0,0.05)]">
         <div className="flex items-center p-3 gap-3">
@@ -45,10 +57,10 @@ const FloatingBottomNav: React.FC<FloatingBottomNavProps> = ({ onHomeClick, onAb
           </div>
           <button
             onClick={handleWhatsAppClick}
-            disabled={!activeVariant}
+            disabled={!isReadyToBuy}
             className="w-full max-w-xs py-4 bg-slate-900 text-white rounded-2xl text-sm font-bold uppercase tracking-widest hover:bg-slate-800 transition-colors transform active:scale-95 shadow-lg shadow-slate-400/50 disabled:bg-slate-400 disabled:cursor-not-allowed flex items-center justify-center gap-3"
           >
-            {activeVariant ? 'Beli Sekarang' : 'Pilih Varian Dulu'}
+            {isReadyToBuy ? 'Beli Sekarang' : 'Pilih Varian Dulu'}
           </button>
         </div>
       </div>

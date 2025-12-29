@@ -80,9 +80,9 @@ const AboutView: React.FC<AboutViewProps> = ({ onBack }) => {
 
       <div className="w-full flex flex-col items-center justify-center space-y-8 animate-view-enter">
         <div className="relative group">
-          <div className="absolute -inset-1 bg-gradient-to-tr from-emerald-400 to-slate-900 rounded-[2.5rem] blur opacity-25 group-hover:opacity-40 transition duration-1000"></div>
-          <div className="relative bg-white p-2 rounded-[2.5rem] shadow-xl">
-            <div className="w-48 h-48 md:w-64 md:h-64 rounded-[2rem] overflow-hidden bg-slate-100">
+          <div className="absolute -inset-1 bg-gradient-to-tr from-emerald-400 to-slate-900 rounded-[2rem] blur opacity-25 group-hover:opacity-40 transition duration-1000"></div>
+          <div className="relative bg-white p-2 rounded-[2rem]">
+            <div className="w-40 h-40 md:w-48 md:h-48 rounded-[1.5rem] overflow-hidden bg-slate-100">
               <img 
                 src={settings.storeLogoUrl || "https://via.placeholder.com/600"} 
                 alt={settings.storeName || "Store Logo"}
