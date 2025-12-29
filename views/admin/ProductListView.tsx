@@ -64,7 +64,7 @@ const ProductListView: React.FC = () => {
       price: '',
       fullDescription: '',
       highlights: [],
-      imageUrl: '',
+      imageUrls: [],
       variants: [],
     };
     setEditingProduct(newProductTemplate);
@@ -124,12 +124,12 @@ const ProductListView: React.FC = () => {
 
   return (
     <div className="animate-view-enter">
-      <div className="flex justify-between items-center mb-6">
+      <div className="flex flex-col md:flex-row justify-between md:items-center mb-6 gap-4">
         <div>
           <h1 className="text-3xl font-black text-slate-900">Produk</h1>
           <p className="text-slate-500 mt-1">Kelola semua produk di toko Anda.</p>
         </div>
-        <button onClick={handleAddNew} className="px-5 py-3 bg-slate-900 text-white rounded-xl text-sm font-bold hover:bg-slate-700 transition-colors">
+        <button onClick={handleAddNew} className="w-full md:w-auto px-5 py-3 bg-slate-900 text-white rounded-xl text-sm font-bold hover:bg-slate-700 transition-colors">
           Tambah Produk Baru
         </button>
       </div>
@@ -139,36 +139,58 @@ const ProductListView: React.FC = () => {
       <div className="mt-6">
         <PageNotice />
         {!isLoading && !error && products.length > 0 && (
-          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm text-left">
-                <thead className="bg-slate-50 text-xs text-slate-500 uppercase font-bold">
-                  <tr>
-                    <th scope="col" className="px-6 py-4">Produk</th>
-                    <th scope="col" className="px-6 py-4">Kategori</th>
-                    <th scope="col" className="px-6 py-4">Harga</th>
-                    <th scope="col" className="px-6 py-4 text-right">Aksi</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {products.map((product) => (
-                    <tr key={product.id} className="border-b border-slate-100 hover:bg-slate-50">
-                      <td className="px-6 py-4 font-bold text-slate-900 flex items-center gap-4">
-                          <img src={product.imageUrl} alt={product.name} className="w-10 h-10 rounded-md object-cover bg-slate-100" />
-                          {product.name}
-                      </td>
-                      <td className="px-6 py-4 text-slate-600">{product.category}</td>
-                      <td className="px-6 py-4 text-slate-600 font-bold">{formatCurrency(product.price)}</td>
-                      <td className="px-6 py-4 text-right space-x-2">
-                        <button onClick={() => handleEdit(product)} className="font-bold text-slate-600 hover:text-slate-900 text-xs">EDIT</button>
-                        <button onClick={() => handleDelete(product.id)} className="font-bold text-red-500 hover:text-red-700 text-xs">HAPUS</button>
-                      </td>
+          <>
+            {/* Desktop Table View */}
+            <div className="hidden md:block bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm text-left">
+                  <thead className="bg-slate-50 text-xs text-slate-500 uppercase font-bold">
+                    <tr>
+                      <th scope="col" className="px-6 py-4">Produk</th>
+                      <th scope="col" className="px-6 py-4">Kategori</th>
+                      <th scope="col" className="px-6 py-4">Harga</th>
+                      <th scope="col" className="px-6 py-4 text-right">Aksi</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody>
+                    {products.map((product) => (
+                      <tr key={product.id} className="border-b border-slate-100 hover:bg-slate-50">
+                        <td className="px-6 py-4 font-bold text-slate-900 flex items-center gap-4">
+                            <img src={product.imageUrls?.[0] || 'https://via.placeholder.com/100'} alt={product.name} className="w-10 h-10 rounded-md object-cover bg-slate-100" />
+                            {product.name}
+                        </td>
+                        <td className="px-6 py-4 text-slate-600">{product.category}</td>
+                        <td className="px-6 py-4 text-slate-600 font-bold">{formatCurrency(product.price)}</td>
+                        <td className="px-6 py-4 text-right space-x-2">
+                          <button onClick={() => handleEdit(product)} className="font-bold text-slate-600 hover:text-slate-900 text-xs">EDIT</button>
+                          <button onClick={() => handleDelete(product.id)} className="font-bold text-red-500 hover:text-red-700 text-xs">HAPUS</button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </div>
-          </div>
+            {/* Mobile Card View */}
+            <div className="md:hidden space-y-4">
+                {products.map((product) => (
+                    <div key={product.id} className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4">
+                        <div className="flex gap-4">
+                            <img src={product.imageUrls?.[0] || 'https://via.placeholder.com/100'} alt={product.name} className="w-20 h-20 rounded-lg object-cover bg-slate-100" />
+                            <div className="flex-grow">
+                                <h3 className="font-bold text-slate-900">{product.name}</h3>
+                                <p className="text-xs text-slate-500 bg-slate-100 inline-block px-2 py-0.5 rounded-md mt-1">{product.category}</p>
+                                <p className="font-bold text-slate-800 mt-2">{formatCurrency(product.price)}</p>
+                            </div>
+                        </div>
+                        <div className="flex justify-end gap-2 border-t border-slate-100 mt-4 pt-3">
+                            <button onClick={() => handleEdit(product)} className="px-4 py-2 text-xs font-bold text-slate-600 bg-slate-100 rounded-lg">EDIT</button>
+                            <button onClick={() => handleDelete(product.id)} className="px-4 py-2 text-xs font-bold text-red-500 bg-red-50 rounded-lg">HAPUS</button>
+                        </div>
+                    </div>
+                ))}
+            </div>
+          </>
         )}
       </div>
     </div>

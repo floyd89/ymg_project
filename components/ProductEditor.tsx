@@ -12,41 +12,59 @@ interface ProductEditorProps {
 const ProductEditor: React.FC<ProductEditorProps> = ({ product, onSave, onCancel }) => {
   const [productData, setProductData] = useState<Product | null>(null);
   const [isUploading, setIsUploading] = useState<Record<string, boolean>>({});
+  const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
 
   useEffect(() => {
     if (product) {
-      setProductData(JSON.parse(JSON.stringify(product)));
+      // Pastikan imageUrls selalu array, bahkan jika data lama/null
+      const initialData = {
+          ...product,
+          imageUrls: Array.isArray(product.imageUrls) ? product.imageUrls : [],
+      };
+      setProductData(JSON.parse(JSON.stringify(initialData)));
     }
   }, [product]);
-  
-  const handleImageUpload = async (file: File | null, uploadKey: string, callback: (url: string) => void) => {
-    if (!file) return;
-    setIsUploading(prev => ({...prev, [uploadKey]: true}));
-    try {
-      const imageUrl = await uploadImage(file);
-      callback(imageUrl);
-    } catch (error) {
-      console.error("Error uploading image:", error);
-      alert("Gagal mengunggah gambar. Pastikan bucket storage Anda 'store-images' sudah publik.");
-    } finally {
-        setIsUploading(prev => ({...prev, [uploadKey]: false}));
-    }
-  };
 
-  const handleMainImageChange = (file: File | null) => {
-    handleImageUpload(file, 'main', (url) => {
-      setProductData(prev => prev ? { ...prev, imageUrl: url } : null);
+  const handleImageFilesUpload = (files: FileList | null) => {
+    if (!files || !productData) return;
+    const currentImageCount = productData.imageUrls.length;
+    const availableSlots = 6 - currentImageCount;
+    if (availableSlots <= 0) {
+        alert("Anda sudah mencapai batas maksimal 6 foto.");
+        return;
+    }
+
+    const filesToUpload = Array.from(files).slice(0, availableSlots);
+    
+    filesToUpload.forEach(file => {
+        const uploadKey = `new-${file.name}-${Date.now()}`;
+        setIsUploading(prev => ({ ...prev, [uploadKey]: true }));
+        uploadImage(file)
+            .then(url => {
+                setProductData(prev => {
+                    if (!prev) return null;
+                    return { ...prev, imageUrls: [...prev.imageUrls, url] };
+                });
+            })
+            .catch(error => {
+                console.error("Error uploading image:", error);
+                alert(`Gagal mengunggah ${file.name}.`);
+            })
+            .finally(() => {
+                setIsUploading(prev => {
+                    const newUploading = { ...prev };
+                    delete newUploading[uploadKey];
+                    return newUploading;
+                });
+            });
     });
   };
-
-  const handleVariantImageChange = (index: number, file: File | null) => {
-    handleImageUpload(file, `variant-${index}`, (url) => {
-      setProductData(prev => {
+  
+  const removeImage = (indexToRemove: number) => {
+    setProductData(prev => {
         if (!prev) return null;
-        const newVariants = [...prev.variants];
-        newVariants[index].imageUrl = url;
-        return { ...prev, variants: newVariants };
-      });
+        const newImageUrls = prev.imageUrls.filter((_, index) => index !== indexToRemove);
+        return { ...prev, imageUrls: newImageUrls };
     });
   };
 
@@ -72,7 +90,6 @@ const ProductEditor: React.FC<ProductEditorProps> = ({ product, onSave, onCancel
         id: `variant-${Date.now()}`,
         colorName: '',
         colorHex: '#000000',
-        imageUrl: '',
         price: '',
       };
       return { ...prev, variants: [...prev.variants, newVariant] };
@@ -86,12 +103,33 @@ const ProductEditor: React.FC<ProductEditorProps> = ({ product, onSave, onCancel
       return { ...prev, variants: newVariants };
     });
   };
+  
+  // Drag and Drop Handlers
+  const handleDragStart = (index: number) => {
+    setDraggedIndex(index);
+  };
+  
+  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+  };
+
+  const handleDrop = (dropIndex: number) => {
+    if (draggedIndex === null || draggedIndex === dropIndex || !productData) return;
+    
+    const newImageUrls = [...productData.imageUrls];
+    const draggedItem = newImageUrls.splice(draggedIndex, 1)[0];
+    newImageUrls.splice(dropIndex, 0, draggedItem);
+    
+    setProductData({ ...productData, imageUrls: newImageUrls });
+    setDraggedIndex(null);
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (productData) {
-      if (!productData.imageUrl && productData.variants.length > 0) {
-        productData.imageUrl = productData.variants[0].imageUrl;
+      if (productData.imageUrls.length === 0) {
+        alert("Mohon unggah setidaknya satu foto produk.");
+        return;
       }
       onSave(productData);
     }
@@ -101,73 +139,66 @@ const ProductEditor: React.FC<ProductEditorProps> = ({ product, onSave, onCancel
   const isAnyUploading = Object.values(isUploading).some(status => status);
 
   return (
-    <div className="bg-white p-6 md:p-10 rounded-2xl border border-slate-200 shadow-sm max-w-4xl mx-auto">
+    <div className="bg-white p-4 md:p-10 rounded-2xl border border-slate-200 shadow-sm max-w-4xl mx-auto">
       <form onSubmit={handleSubmit}>
         <h2 className="text-2xl font-black text-slate-900 mb-8">{product?.id.startsWith('new-product') ? 'Tambah Produk Baru' : 'Edit Produk'}</h2>
         
-        <div className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div className="md:col-span-2 space-y-6">
-                <input type="text" name="name" value={productData.name} onChange={handleChange} placeholder="Nama Produk" required className="w-full p-3 bg-slate-50 rounded-lg border border-slate-200 font-bold focus:ring-2 focus:ring-slate-900 focus:border-slate-900 outline-none" />
-                <div className="grid grid-cols-2 gap-6">
-                  <input type="text" name="category" value={productData.category} onChange={handleChange} placeholder="Kategori" required className="w-full p-3 bg-slate-50 rounded-lg border border-slate-200 font-bold focus:ring-2 focus:ring-slate-900 focus:border-slate-900 outline-none" />
-                  <input type="text" name="price" value={productData.price} onChange={handleChange} placeholder="Harga Utama" required className="w-full p-3 bg-slate-50 rounded-lg border border-slate-200 font-bold focus:ring-2 focus:ring-slate-900 focus:border-slate-900 outline-none" />
-                </div>
+        <div className="space-y-8">
+          {/* Section: Basic Info */}
+          <div className="space-y-4">
+              <input type="text" name="name" value={productData.name} onChange={handleChange} placeholder="Nama Produk" required className="w-full p-3 bg-slate-50 rounded-lg border border-slate-200 font-bold focus:ring-2 focus:ring-slate-900 focus:border-slate-900 outline-none" />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <input type="text" name="category" value={productData.category} onChange={handleChange} placeholder="Kategori" required className="w-full p-3 bg-slate-50 rounded-lg border border-slate-200 font-bold focus:ring-2 focus:ring-slate-900 focus:border-slate-900 outline-none" />
+                <input type="text" name="price" value={productData.price} onChange={handleChange} placeholder="Harga Utama" required className="w-full p-3 bg-slate-50 rounded-lg border border-slate-200 font-bold focus:ring-2 focus:ring-slate-900 focus:border-slate-900 outline-none" />
               </div>
-              <div className="flex flex-col items-center justify-center">
-                  {productData.imageUrl ? (
-                    <img src={productData.imageUrl} alt="Gambar utama" className="w-32 h-32 object-cover rounded-lg bg-slate-100 mb-3" />
-                  ) : (
-                    <div className="w-32 h-32 rounded-lg bg-slate-100 mb-3 flex items-center justify-center border-2 border-dashed border-slate-300">
-                      <svg className="w-10 h-10 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 4v16m8-8H4" />
-                      </svg>
-                    </div>
-                  )}
-                  <input type="file" accept="image/*" id="main-image-upload" onChange={(e) => handleMainImageChange(e.target.files?.[0] ?? null)} className="hidden"/>
-                  <label htmlFor="main-image-upload" className="flex items-center text-xs font-bold text-slate-500 hover:text-slate-900 cursor-pointer transition-colors">
-                    <svg className="w-4 h-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" /></svg>
-                    {isUploading['main'] ? 'Mengunggah...' : 'Ubah Gambar'}
-                  </label>
-              </div>
+              <textarea name="fullDescription" value={productData.fullDescription} onChange={handleChange} placeholder="Deskripsi Lengkap" required rows={4} className="w-full p-3 bg-slate-50 rounded-lg border border-slate-200 font-bold focus:ring-2 focus:ring-slate-900 focus:border-slate-900 outline-none" />
           </div>
-          <textarea name="fullDescription" value={productData.fullDescription} onChange={handleChange} placeholder="Deskripsi Lengkap" required rows={4} className="w-full p-3 bg-slate-50 rounded-lg border border-slate-200 font-bold focus:ring-2 focus:ring-slate-900 focus:border-slate-900 outline-none" />
+
+          {/* Section: Product Images */}
+          <div className="pt-4">
+            <h3 className="text-lg font-bold text-slate-800">Foto Produk (Maks. 6)</h3>
+            <p className="text-xs text-slate-500 mb-4">Foto pertama akan menjadi foto utama. Seret untuk mengubah urutan. Rekomendasi ukuran: 1080x1080 piksel.</p>
+            {productData.imageUrls.length > 0 && <p className="text-xs font-bold text-green-600 bg-green-50 p-2 rounded-md mb-4">✓ Foto utama sudah diisi.</p>}
+            <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-3">
+              {productData.imageUrls.map((url, index) => (
+                <div 
+                  key={url + index} 
+                  className={`relative aspect-square group rounded-lg overflow-hidden border-2 ${draggedIndex === index ? 'border-emerald-500' : 'border-slate-200'}`}
+                  draggable
+                  onDragStart={() => handleDragStart(index)}
+                  onDragOver={handleDragOver}
+                  onDrop={() => handleDrop(index)}
+                >
+                  <img src={url} alt={`Produk ${index + 1}`} className="w-full h-full object-cover" />
+                  {index === 0 && <span className="absolute bottom-1 left-1 bg-slate-900 text-white text-[8px] font-bold px-1.5 py-0.5 rounded-full">Utama</span>}
+                  <button type="button" onClick={() => removeImage(index)} className="absolute top-1 right-1 w-5 h-5 bg-black/40 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity text-xs font-black">X</button>
+                </div>
+              ))}
+              {productData.imageUrls.length < 6 && (
+                <label className="relative aspect-square flex flex-col items-center justify-center border-2 border-dashed border-slate-300 rounded-lg cursor-pointer hover:bg-slate-50 text-slate-400 hover:text-slate-600 transition-colors">
+                  <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M12 4v16m8-8H4" /></svg>
+                  <span className="text-[10px] font-bold mt-1 text-center">Tambah Foto</span>
+                  <input type="file" multiple accept="image/*" className="absolute inset-0 w-full h-full opacity-0" onChange={(e) => handleImageFilesUpload(e.target.files)} />
+                </label>
+              )}
+            </div>
+          </div>
           
+          {/* Section: Variants */}
           <div className="pt-4">
             <h3 className="text-lg font-bold text-slate-800 mb-4">Varian Produk</h3>
             <div className="space-y-4">
               {productData.variants.map((variant, index) => (
-                <div key={variant.id} className="grid grid-cols-1 md:grid-cols-6 gap-4 items-center p-4 bg-slate-50 rounded-xl border border-slate-200">
-                  <div className="flex flex-col items-center">
-                    {variant.imageUrl ? (
-                      <img src={variant.imageUrl} alt={variant.colorName} className="w-14 h-14 rounded-md object-cover bg-slate-200 mb-1" />
-                    ) : (
-                      <div className="w-14 h-14 rounded-md bg-slate-200 mb-1 flex items-center justify-center border-2 border-dashed border-slate-300">
-                          <svg className="w-6 h-6 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 4v16m8-8H4" />
-                          </svg>
-                      </div>
-                    )}
-                    <input type="file" accept="image/*" id={`variant-img-${index}`} onChange={e => handleVariantImageChange(index, e.target.files?.[0] ?? null)} className="hidden"/>
-                    <label htmlFor={`variant-img-${index}`} className="flex items-center text-[10px] font-bold text-slate-500 cursor-pointer hover:text-slate-900 transition-colors">
-                      <svg className="w-3 h-3 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" /></svg>
-                      {isUploading[`variant-${index}`] ? '...' : 'Upload'}
-                    </label>
-                  </div>
-                  <input type="text" name="colorName" value={variant.colorName} onChange={e => handleVariantChange(index, e)} placeholder="Nama Warna" required className="md:col-span-1 p-2 rounded-md border-slate-300 font-medium text-sm" />
-                  <div className="flex items-center gap-2 md:col-span-2">
-                    <div className="w-8 h-8 rounded-md border border-slate-200 shrink-0" style={{ backgroundColor: variant.colorHex || '#FFFFFF' }}></div>
-                    <input
-                      type="text"
-                      name="colorHex"
-                      value={variant.colorHex}
-                      onChange={e => handleVariantChange(index, e)}
-                      placeholder="#RRGGBB"
-                      className="w-full p-2 rounded-md border-slate-300 font-medium text-sm"
-                    />
-                  </div>
-                  <input type="text" name="price" value={variant.price} onChange={e => handleVariantChange(index, e)} placeholder="Harga Varian (opsional)" className="md:col-span-1 p-2 rounded-md border-slate-300 font-medium text-sm" />
-                  <button type="button" onClick={() => removeVariant(index)} className="md:col-span-1 text-red-500 hover:text-red-700 font-bold text-xs justify-self-end">HAPUS</button>
+                <div key={variant.id} className="flex flex-col md:flex-row gap-4 items-center p-4 bg-slate-50 rounded-xl border border-slate-200">
+                    <div className="w-full md:w-auto grid grid-cols-2 md:grid-cols-1 gap-2">
+                        <input type="text" name="colorName" value={variant.colorName} onChange={e => handleVariantChange(index, e)} placeholder="Nama Warna" required className="w-full p-2 rounded-md border-slate-300 font-medium text-sm" />
+                        <div className="flex items-center gap-2">
+                            <div className="w-8 h-8 rounded-md border border-slate-200 shrink-0" style={{ backgroundColor: variant.colorHex || '#FFFFFF' }}></div>
+                            <input type="text" name="colorHex" value={variant.colorHex} onChange={e => handleVariantChange(index, e)} placeholder="#RRGGBB" className="w-full p-2 rounded-md border-slate-300 font-medium text-sm" />
+                        </div>
+                    </div>
+                    <input type="text" name="price" value={variant.price} onChange={e => handleVariantChange(index, e)} placeholder="Harga Varian (opsional)" className="w-full md:flex-1 p-2 rounded-md border-slate-300 font-medium text-sm" />
+                    <button type="button" onClick={() => removeVariant(index)} className="w-full md:w-auto text-red-500 hover:text-red-700 font-bold text-xs justify-self-end bg-red-50 px-3 py-2 rounded-md">HAPUS</button>
                 </div>
               ))}
             </div>

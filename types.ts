@@ -3,7 +3,6 @@ export interface ProductVariant {
   id: string;
   colorName: string;
   colorHex: string; // e.g., '#333333'
-  imageUrl: string;
   price?: string; // Harga spesifik untuk varian, opsional
 }
 
@@ -14,7 +13,7 @@ export interface Product {
   price: string;
   fullDescription: string;
   highlights: string[];
-  imageUrl: string; // Default image
+  imageUrls: string[]; // Menggantikan imageUrl tunggal
   variants: ProductVariant[];
 }
 

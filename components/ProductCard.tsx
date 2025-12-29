@@ -17,7 +17,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onClick }) => {
     >
       <div className="aspect-square overflow-hidden bg-slate-100 relative">
         <img 
-          src={product.imageUrl} 
+          src={product.imageUrls?.[0] || 'https://via.placeholder.com/300'} 
           alt={product.name} 
           className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700 ease-in-out"
         />

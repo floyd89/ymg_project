@@ -104,17 +104,17 @@ const SettingsView: React.FC = () => {
       <AdminNotice />
 
       <div className="border-b border-slate-200 mb-6 mt-6">
-        <nav className="-mb-px flex gap-6">
-          <button onClick={() => setActiveTab('general')} className={`py-3 px-1 border-b-2 font-bold text-sm ${activeTab === 'general' ? 'border-slate-900 text-slate-900' : 'border-transparent text-slate-500 hover:border-slate-300'}`}>Umum</button>
-          <button onClick={() => setActiveTab('profile')} className={`py-3 px-1 border-b-2 font-bold text-sm ${activeTab === 'profile' ? 'border-slate-900 text-slate-900' : 'border-transparent text-slate-500 hover:border-slate-300'}`}>Profil</button>
-          <button onClick={() => setActiveTab('banners')} className={`py-3 px-1 border-b-2 font-bold text-sm ${activeTab === 'banners' ? 'border-slate-900 text-slate-900' : 'border-transparent text-slate-500 hover:border-slate-300'}`}>Banner</button>
+        <nav className="-mb-px flex gap-6 overflow-x-auto no-scrollbar">
+          <button onClick={() => setActiveTab('general')} className={`shrink-0 py-3 px-1 border-b-2 font-bold text-sm ${activeTab === 'general' ? 'border-slate-900 text-slate-900' : 'border-transparent text-slate-500 hover:border-slate-300'}`}>Umum</button>
+          <button onClick={() => setActiveTab('profile')} className={`shrink-0 py-3 px-1 border-b-2 font-bold text-sm ${activeTab === 'profile' ? 'border-slate-900 text-slate-900' : 'border-transparent text-slate-500 hover:border-slate-300'}`}>Profil</button>
+          <button onClick={() => setActiveTab('banners')} className={`shrink-0 py-3 px-1 border-b-2 font-bold text-sm ${activeTab === 'banners' ? 'border-slate-900 text-slate-900' : 'border-transparent text-slate-500 hover:border-slate-300'}`}>Banner</button>
         </nav>
       </div>
 
       {isLoading && <p className="font-bold text-slate-500">Memuat pengaturan...</p>}
 
       {!isLoading && activeTab === 'general' && (
-        <div className="bg-white p-8 rounded-2xl border border-slate-200">
+        <div className="bg-white p-6 md:p-8 rounded-2xl border border-slate-200">
           <div className="max-w-md space-y-4">
             <div>
               <label htmlFor="whatsAppNumber" className="text-sm font-bold text-slate-700">Nomor WhatsApp</label>
@@ -129,13 +129,13 @@ const SettingsView: React.FC = () => {
       )}
 
       {!isLoading && activeTab === 'profile' && (
-        <div className="bg-white p-8 rounded-2xl border border-slate-200">
+        <div className="bg-white p-6 md:p-8 rounded-2xl border border-slate-200">
           <div className="max-w-md space-y-6">
-            <div className="flex items-center gap-6">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-6">
                 <img src={settings.storeLogoUrl || 'https://via.placeholder.com/100'} alt="Logo Toko" className="w-24 h-24 object-cover rounded-full bg-slate-100" />
                 <div>
                   <label htmlFor="logo-upload" className="text-sm font-bold text-slate-700">Logo Toko</label>
-                  <p className="text-xs text-slate-400 mb-2">Rekomendasi ukuran 1:1 (persegi).</p>
+                  <p className="text-xs text-slate-400 mb-2">Rekomendasi ukuran: 512x512 piksel.</p>
                   <input type="file" accept="image/*" id="logo-upload" className="hidden" onChange={(e) => handleLogoUpload(e.target.files?.[0] ?? null)} />
                   <label htmlFor="logo-upload" className="px-4 py-2 bg-slate-100 text-slate-800 rounded-lg text-xs font-bold hover:bg-slate-200 cursor-pointer">{isUploading['logo'] ? 'Mengunggah...' : 'Pilih Gambar'}</label>
                 </div>
@@ -151,10 +151,12 @@ const SettingsView: React.FC = () => {
             <div>
               <label htmlFor="instagramUrl" className="text-sm font-bold text-slate-700">URL Instagram</label>
               <input type="text" id="instagramUrl" name="instagramUrl" value={settings.instagramUrl || ''} onChange={handleSettingsChange} placeholder="https://instagram.com/username" className="w-full p-3 mt-2 bg-slate-50 rounded-lg border border-slate-200 font-bold focus:ring-2 focus:ring-slate-900 focus:border-slate-900 outline-none" />
+              <p className="text-xs text-slate-400 mt-1">Contoh: https://instagram.com/ymgstore</p>
             </div>
             <div>
               <label htmlFor="tiktokUrl" className="text-sm font-bold text-slate-700">URL TikTok</label>
               <input type="text" id="tiktokUrl" name="tiktokUrl" value={settings.tiktokUrl || ''} onChange={handleSettingsChange} placeholder="https://tiktok.com/@username" className="w-full p-3 mt-2 bg-slate-50 rounded-lg border border-slate-200 font-bold focus:ring-2 focus:ring-slate-900 focus:border-slate-900 outline-none" />
+              <p className="text-xs text-slate-400 mt-1">Contoh: https://tiktok.com/@ymgstore</p>
             </div>
           </div>
           <div className="mt-8">
@@ -164,7 +166,7 @@ const SettingsView: React.FC = () => {
       )}
 
       {!isLoading && activeTab === 'banners' && (
-        <div className="bg-white p-8 rounded-2xl border border-slate-200">
+        <div className="bg-white p-6 md:p-8 rounded-2xl border border-slate-200">
            <div className="space-y-6">
              {banners.map((banner, index) => (
                 <div key={banner.id} className="grid grid-cols-1 md:grid-cols-3 gap-6 p-4 border border-slate-200 rounded-xl">
@@ -172,6 +174,7 @@ const SettingsView: React.FC = () => {
                          <img src={banner.imgUrl} alt="Banner preview" className="w-full aspect-video object-cover rounded-lg mb-2 bg-slate-100" />
                          <input type="file" accept="image/*" id={`banner-upload-${index}`} className="hidden" onChange={(e) => handleBannerImageChange(index, e.target.files?.[0] ?? null)} />
                          <label htmlFor={`banner-upload-${index}`} className="text-xs font-bold text-slate-500 hover:text-slate-900 cursor-pointer">{isUploading[`banner-${index}`] ? 'Mengunggah...' : 'Ubah Gambar'}</label>
+                         <p className="text-xs text-slate-400 mt-1">Rekomendasi ukuran: 1200x600 piksel.</p>
                     </div>
                     <div className="md:col-span-2 space-y-3">
                          <input type="text" name="title" value={banner.title} placeholder="Judul Banner" onChange={(e) => handleBannerChange(index, e)} className="w-full p-2 bg-slate-50 rounded-md border border-slate-200 font-bold" />

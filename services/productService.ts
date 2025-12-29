@@ -1,3 +1,4 @@
+
 import { Product } from '../types';
 import { supabase } from '../lib/supabaseClient';
 
@@ -16,6 +17,7 @@ const getProducts = async (): Promise<Product[]> => {
     ...p,
     variants: p.variants || [],
     highlights: p.highlights || [],
+    imageUrls: p.imageUrls || [], // Memastikan imageUrls selalu array
   }));
 };
 
