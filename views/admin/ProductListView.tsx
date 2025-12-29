@@ -125,6 +125,17 @@ const ProductListView: React.FC = () => {
     }
     return null;
   }
+  
+  // Fungsi helper untuk mendapatkan URL gambar yang aman untuk ditampilkan
+  const getSafeImageUrl = (product: Product): string => {
+    const placeholder = 'https://via.placeholder.com/100';
+    // Cek jika imageUrls ada, adalah array, dan elemen pertamanya adalah string yang tidak kosong
+    if (product.imageUrls && Array.isArray(product.imageUrls) && product.imageUrls[0]) {
+      return product.imageUrls[0];
+    }
+    return placeholder;
+  };
+
 
   return (
     <div className="animate-view-enter">
@@ -160,7 +171,7 @@ const ProductListView: React.FC = () => {
                     {products.map((product) => (
                       <tr key={product.id} className="border-b border-slate-100 hover:bg-slate-50">
                         <td className="px-6 py-4 font-bold text-slate-900 flex items-center gap-4">
-                            <img src={product.imageUrls?.[0] || 'https://via.placeholder.com/100'} alt={product.name} className="w-10 h-10 rounded-md object-cover bg-slate-100" />
+                            <img src={getSafeImageUrl(product)} alt={product.name} className="w-10 h-10 rounded-md object-cover bg-slate-100" />
                             {product.name}
                         </td>
                         <td className="px-6 py-4 text-slate-600">{product.category}</td>
@@ -180,7 +191,7 @@ const ProductListView: React.FC = () => {
                 {products.map((product) => (
                     <div key={product.id} className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4">
                         <div className="flex gap-4">
-                            <img src={product.imageUrls?.[0] || 'https://via.placeholder.com/100'} alt={product.name} className="w-20 h-20 rounded-lg object-cover bg-slate-100" />
+                            <img src={getSafeImageUrl(product)} alt={product.name} className="w-20 h-20 rounded-lg object-cover bg-slate-100" />
                             <div className="flex-grow">
                                 <h3 className="font-bold text-slate-900">{product.name}</h3>
                                 <p className="text-xs text-slate-500 bg-slate-100 inline-block px-2 py-0.5 rounded-md mt-1">{product.category}</p>
