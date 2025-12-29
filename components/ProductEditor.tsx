@@ -1,9 +1,10 @@
 
 import React, { useState, useEffect } from 'react';
 import { Product, ProductVariant, Category } from '../types';
-import { uploadImage } from '../utils/imageConverter';
+import { uploadImage, fileToBase64 } from '../utils/imageConverter';
 import SetupNotice from './admin/SetupNotice';
 import SchemaNotice from './admin/SchemaNotice';
+import { supabase } from '../lib/supabaseClient';
 
 interface ProductEditorProps {
   product: Product | null;
@@ -16,6 +17,7 @@ interface ProductEditorProps {
 
 const ProductEditor: React.FC<ProductEditorProps> = ({ product, categories, onSave, onCancel, saveError, onDismissSaveError }) => {
   const [productData, setProductData] = useState<Product | null>(null);
+  const [imagePreviews, setImagePreviews] = useState<Record<string, string>>({});
   const [isUploading, setIsUploading] = useState<Record<string, boolean>>({});
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
   const [uploadError, setUploadError] = useState<string | null>(null);
@@ -33,31 +35,57 @@ const ProductEditor: React.FC<ProductEditorProps> = ({ product, categories, onSa
     }
   }, [product, categories]);
 
+  const getDisplayUrl = (path: string): string => {
+    if (!path || path.startsWith('http') || path.startsWith('data:')) {
+      return path;
+    }
+    const { data } = supabase.storage.from('store-images').getPublicUrl(path);
+    return data ? data.publicUrl : '';
+  };
+
   const handleImageFilesUpload = (files: FileList | null) => {
     if (!files || !productData) return;
-    const availableSlots = 6 - productData.imageUrls.length;
+    const currentImageCount = productData.imageUrls.length + Object.keys(imagePreviews).length;
+    const availableSlots = 6 - currentImageCount;
     if (availableSlots <= 0) {
         alert("Maksimal 6 foto.");
         return;
     }
     const filesToUpload = Array.from(files).slice(0, availableSlots);
+
     filesToUpload.forEach(file => {
-        const uploadKey = `new-${file.name}-${Date.now()}`;
-        setIsUploading(prev => ({ ...prev, [uploadKey]: true }));
+        const tempId = `preview-${file.name}-${Date.now()}`;
+
+        // 1. Tampilkan pratinjau lokal secara instan
+        fileToBase64(file).then(base64 => {
+            setImagePreviews(prev => ({ ...prev, [tempId]: base64 }));
+        });
+        
+        // 2. Mulai proses unggah di latar belakang
+        setIsUploading(prev => ({ ...prev, [tempId]: true }));
         uploadImage(file)
-            .then(url => {
+            .then(filePath => {
                 setUploadError(null);
-                setProductData(prev => prev ? { ...prev, imageUrls: [...prev.imageUrls, url] } : null);
+                // 3. Setelah berhasil, pindahkan dari pratinjau ke data produk
+                setProductData(prev => prev ? { ...prev, imageUrls: [...prev.imageUrls, filePath] } : null);
             })
             .catch(error => {
                 if (error.message.includes('Bucket not found')) setUploadError('BUCKET_NOT_FOUND');
                 else alert(error.message || `Gagal mengunggah ${file.name}.`);
             })
-            .finally(() => setIsUploading(prev => {
-                const newUp = { ...prev };
-                delete newUp[uploadKey];
-                return newUp;
-            }));
+            .finally(() => {
+                // 4. Hapus dari status pratinjau dan unggahan
+                setImagePreviews(prev => {
+                    const newPreviews = { ...prev };
+                    delete newPreviews[tempId];
+                    return newPreviews;
+                });
+                setIsUploading(prev => {
+                    const newUp = { ...prev };
+                    delete newUp[tempId];
+                    return newUp;
+                });
+            });
     });
   };
   
@@ -138,12 +166,20 @@ const ProductEditor: React.FC<ProductEditorProps> = ({ product, categories, onSa
             <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-3">
               {productData.imageUrls.map((url, index) => (
                 <div key={url+index} className="relative aspect-square group rounded-lg overflow-hidden border-2" draggable onDragStart={() => handleDragStart(index)} onDragOver={handleDragOver} onDrop={() => handleDrop(index)}>
-                  <img src={url} className="w-full h-full object-cover" />
+                  <img src={getDisplayUrl(url)} className="w-full h-full object-cover" />
                   {index === 0 && <span className="absolute bottom-1 left-1 bg-black/50 text-white text-[8px] font-bold px-1.5 py-0.5 rounded-full">Utama</span>}
                   <button type="button" onClick={() => removeImage(index)} className="absolute top-1 right-1 w-5 h-5 bg-black/40 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 text-xs font-black">X</button>
                 </div>
               ))}
-              {productData.imageUrls.length < 6 && (
+              {Object.entries(imagePreviews).map(([id, src]) => (
+                <div key={id} className="relative aspect-square group rounded-lg overflow-hidden border-2">
+                    <img src={src} className="w-full h-full object-cover" />
+                    <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
+                        <div className="w-6 h-6 border-2 border-white/50 border-t-white rounded-full animate-spin"></div>
+                    </div>
+                </div>
+              ))}
+              {(productData.imageUrls.length + Object.keys(imagePreviews).length) < 6 && (
                 <label className="aspect-square flex flex-col items-center justify-center border-2 border-dashed border-slate-300 rounded-lg cursor-pointer hover:bg-slate-50"><svg className="w-8 h-8 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M12 4v16m8-8H4" /></svg><input type="file" multiple accept="image/*" className="hidden" onChange={e => handleImageFilesUpload(e.target.files)} /></label>
               )}
             </div>
