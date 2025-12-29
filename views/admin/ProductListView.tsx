@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { Product } from '../../types';
 import { productService } from '../../services/productService';
 import ProductEditor from '../../components/ProductEditor';
+import AdminNotice from '../../components/admin/AdminNotice';
 
 const ProductListView: React.FC = () => {
   const [products, setProducts] = useState<Product[]>([]);
@@ -67,7 +68,7 @@ const ProductListView: React.FC = () => {
 
   return (
     <div className="animate-view-enter">
-      <div className="flex justify-between items-center mb-10">
+      <div className="flex justify-between items-center mb-6">
         <div>
           <h1 className="text-3xl font-black text-slate-900">Produk</h1>
           <p className="text-slate-500 mt-1">Kelola semua produk di toko Anda.</p>
@@ -76,10 +77,12 @@ const ProductListView: React.FC = () => {
           Tambah Produk Baru
         </button>
       </div>
+
+      <AdminNotice />
       
       {isLoading && <p>Memuat...</p>}
       {!isLoading && (
-        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden mt-6">
           <div className="overflow-x-auto">
             <table className="w-full text-sm text-left">
               <thead className="bg-slate-50 text-xs text-slate-500 uppercase font-bold">

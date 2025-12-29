@@ -4,6 +4,7 @@ import { settingsService } from '../../services/settingsService';
 import { bannerService } from '../../services/bannerService';
 import { AppSettings, Banner } from '../../types';
 import { fileToBase64 } from '../../utils/imageConverter';
+import AdminNotice from '../../components/admin/AdminNotice';
 
 const SettingsView: React.FC = () => {
   const [settings, setSettings] = useState<AppSettings>({ whatsAppNumber: '' });
@@ -52,12 +53,14 @@ const SettingsView: React.FC = () => {
 
   return (
     <div className="animate-view-enter">
-      <div className="mb-10">
+      <div className="mb-6">
         <h1 className="text-3xl font-black text-slate-900">Pengaturan Toko</h1>
         <p className="text-slate-500 mt-1">Atur informasi umum dan tampilan toko Anda.</p>
       </div>
+      
+      <AdminNotice />
 
-      <div className="border-b border-slate-200 mb-6">
+      <div className="border-b border-slate-200 mb-6 mt-6">
         <nav className="-mb-px flex gap-6">
           <button onClick={() => setActiveTab('general')} className={`py-3 px-1 border-b-2 font-bold text-sm ${activeTab === 'general' ? 'border-slate-900 text-slate-900' : 'border-transparent text-slate-500 hover:border-slate-300'}`}>Umum</button>
           <button onClick={() => setActiveTab('banners')} className={`py-3 px-1 border-b-2 font-bold text-sm ${activeTab === 'banners' ? 'border-slate-900 text-slate-900' : 'border-transparent text-slate-500 hover:border-slate-300'}`}>Banner</button>

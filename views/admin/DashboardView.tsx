@@ -1,4 +1,6 @@
+
 import React, { useState, useEffect } from 'react';
+import AdminNotice from '../../components/admin/AdminNotice';
 
 // FIX: Replaced JSX.Element with React.ReactElement to fix "Cannot find namespace 'JSX'" error.
 const StatCard: React.FC<{ title: string; value: string; icon: React.ReactElement }> = ({ title, value, icon }) => (
@@ -21,11 +23,14 @@ const DashboardView: React.FC = () => {
   }, []);
 
   return (
-    <div className="animate-view-enter">
-      <div className="mb-10">
+    <div className="animate-view-enter space-y-10">
+      <div>
         <h1 className="text-3xl font-black text-slate-900">Dashboard</h1>
         <p className="text-slate-500 mt-1">Ringkasan aktivitas di toko Anda (data simulasi).</p>
       </div>
+      
+      <AdminNotice />
+
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         <StatCard 
           title="Total Muatan Halaman" 
@@ -38,8 +43,8 @@ const DashboardView: React.FC = () => {
           icon={<svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" /></svg>}
         />
       </div>
-       <div className="mt-8 text-center bg-yellow-50 text-yellow-800 p-4 rounded-xl border border-yellow-200 text-xs font-bold">
-        Catatan: Data ini hanya simulasi dan dilacak dari aktivitas di peramban Anda saat ini.
+       <div className="text-center bg-yellow-50 text-yellow-800 p-4 rounded-xl border border-yellow-200 text-xs font-bold">
+        Catatan: Data analitik ini hanya simulasi dan dilacak dari aktivitas di peramban Anda saat ini.
       </div>
     </div>
   );
