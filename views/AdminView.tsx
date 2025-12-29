@@ -96,7 +96,7 @@ const AdminLayout: React.FC = () => {
   return (
     <div className="min-h-screen bg-slate-50 flex">
       <div className={`fixed inset-0 z-50 transform md:hidden ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'} transition-transform duration-300 ease-in-out`}>
-        <div className="w-64 bg-white h-full p-4 flex flex-col shadow-xl">
+        <div className="relative z-10 w-64 bg-white h-full p-4 flex flex-col shadow-xl">
           <SidebarContent />
         </div>
         <div onClick={() => setIsSidebarOpen(false)} className="absolute inset-0 bg-black/30"></div>
