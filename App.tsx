@@ -7,8 +7,9 @@ import HomeView from './views/HomeView';
 import DetailView from './views/DetailView';
 import AboutView from './views/AboutView';
 import AdminLayout from './views/AdminView';
-import { View, Product, ProductVariant } from './types';
+import { View, Product, ProductVariant, Category } from './types';
 import { productService } from './services/productService';
+import { categoryService } from './services/categoryService';
 import { supabase } from './lib/supabaseClient';
 
 const App: React.FC = () => {
@@ -30,11 +31,13 @@ const App: React.FC = () => {
 
   // Storefront Logic
   const [products, setProducts] = useState<Product[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [currentView, setCurrentView] = useState<View>('home');
   const [selectedProductId, setSelectedProductId] = useState<string | null>(null);
   const [selectedVariant, setSelectedVariant] = useState<ProductVariant | null>(null);
+  const [selectedCategory, setSelectedCategory] = useState<string>('Semua');
   
   const handleBackNavigation = () => window.history.back();
 
@@ -68,11 +71,15 @@ const App: React.FC = () => {
     }
   }, []);
 
-  const loadProducts = useCallback(async () => {
+  const loadData = useCallback(async () => {
     setError(null);
     try {
-      const fetchedProducts = await productService.getProducts();
+      const [fetchedProducts, fetchedCategories] = await Promise.all([
+        productService.getProducts(),
+        categoryService.getCategories()
+      ]);
       setProducts(fetchedProducts);
+      setCategories(fetchedCategories);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Gagal memuat produk.');
       console.error(err);
@@ -81,19 +88,24 @@ const App: React.FC = () => {
     }
   }, []);
 
+
   useEffect(() => {
-    loadProducts();
+    loadData();
     const channel = supabase
       .channel('public:products')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'products' }, (payload) => {
         console.log('Perubahan terdeteksi di storefront!', payload);
-        loadProducts();
+        loadData();
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'categories' }, (payload) => {
+        console.log('Perubahan kategori terdeteksi!', payload);
+        loadData();
       })
       .subscribe();
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [loadProducts]);
+  }, [loadData]);
 
   const selectedProduct = useMemo(() => {
     return products.find(p => p.id === selectedProductId) || null;
@@ -102,6 +114,10 @@ const App: React.FC = () => {
   const navigateTo = (view: View, productId?: string) => {
     let hash = '';
     let state: any = { view };
+
+    if (view === 'home') {
+      setSelectedCategory('Semua');
+    }
 
     if (view === 'detail' && productId) {
       hash = `#detail/${productId}`;
@@ -143,10 +159,10 @@ const App: React.FC = () => {
     if (error) return <div className="flex-grow flex items-center justify-center min-h-[50vh]"><p className="text-red-500 font-bold bg-red-50 p-4 rounded-lg">{error}</p></div>;
 
     switch (currentView) {
-      case 'home': return <HomeView products={products} onProductClick={handleProductClick} onGoProducts={navigateToProductsSection} />;
+      case 'home': return <HomeView products={products} categories={categories} selectedCategory={selectedCategory} onSelectCategory={setSelectedCategory} onProductClick={handleProductClick} onGoProducts={navigateToProductsSection} />;
       case 'detail': return selectedProduct && <DetailView product={selectedProduct} selectedVariant={selectedVariant} onVariantChange={setSelectedVariant} onBack={handleBackNavigation} />;
       case 'about': return <AboutView onBack={handleBackNavigation} />;
-      default: return <HomeView products={products} onProductClick={handleProductClick} onGoProducts={navigateToProductsSection} />;
+      default: return <HomeView products={products} categories={categories} selectedCategory={selectedCategory} onSelectCategory={setSelectedCategory} onProductClick={handleProductClick} onGoProducts={navigateToProductsSection} />;
     }
   };
 

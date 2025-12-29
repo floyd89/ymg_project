@@ -1,25 +1,30 @@
 
 import React, { useState, useMemo } from 'react';
-import { Product } from '../types';
+import { Product, Category } from '../types';
 import ProductCard from '../components/ProductCard';
 import Banner from '../components/Banner';
+import CategoryFilter from '../components/CategoryFilter';
 
 interface HomeViewProps {
   products: Product[];
+  categories: Category[];
+  selectedCategory: string;
+  onSelectCategory: (categoryName: string) => void;
   onProductClick: (id: string) => void;
   onGoProducts: () => void;
 }
 
-const HomeView: React.FC<HomeViewProps> = ({ products, onProductClick, onGoProducts }) => {
+const HomeView: React.FC<HomeViewProps> = ({ products, categories, selectedCategory, onSelectCategory, onProductClick, onGoProducts }) => {
   const [searchTerm, setSearchTerm] = useState('');
 
   const filteredProducts = useMemo(() => {
     if (!products) return [];
-    return products.filter(product => 
-      product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      product.category.toLowerCase().includes(searchTerm.toLowerCase())
-    );
-  }, [searchTerm, products]);
+    return products.filter(product => {
+      const matchesCategory = selectedCategory === 'Semua' || product.category === selectedCategory;
+      const matchesSearch = !searchTerm || product.name.toLowerCase().includes(searchTerm.toLowerCase());
+      return matchesCategory && matchesSearch;
+    });
+  }, [searchTerm, products, selectedCategory]);
 
   return (
     <div className="space-y-8 md:space-y-12 py-6 md:py-10">
@@ -62,6 +67,13 @@ const HomeView: React.FC<HomeViewProps> = ({ products, onProductClick, onGoProdu
       {/* Banner Section */}
       <Banner onExploreClick={onGoProducts} />
 
+      {/* Category Filter Section */}
+      <CategoryFilter 
+        categories={categories}
+        selectedCategory={selectedCategory}
+        onSelectCategory={onSelectCategory}
+      />
+
       {/* Product Grid Section */}
       <section id="products" className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 scroll-mt-24">
         <div className="flex justify-center md:justify-start mb-8 md:mb-12">
@@ -80,9 +92,13 @@ const HomeView: React.FC<HomeViewProps> = ({ products, onProductClick, onGoProdu
           </div>
         ) : (
           <div className="text-center py-20 bg-slate-50 rounded-[2rem] border-2 border-dashed border-slate-200">
-            <p className="text-slate-500 font-bold">Produk "{searchTerm}" tidak ditemukan.</p>
+            <p className="text-slate-500 font-bold">Produk tidak ditemukan.</p>
+            {searchTerm && <p className="text-sm text-slate-400">Coba kata kunci lain atau hapus filter.</p>}
             <button 
-              onClick={() => setSearchTerm('')}
+              onClick={() => {
+                setSearchTerm('');
+                onSelectCategory('Semua');
+              }}
               className="mt-4 text-emerald-600 font-black text-xs uppercase tracking-widest hover:underline"
             >
               Lihat Semua Produk
