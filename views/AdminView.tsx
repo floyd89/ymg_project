@@ -1,147 +1,87 @@
-
 import React, { useState, useEffect } from 'react';
-import { Product } from '../types';
-import { productService } from '../services/productService';
-import ProductEditor from '../components/ProductEditor';
+import DashboardView from './admin/DashboardView';
+import ProductListView from './admin/ProductListView';
+import SettingsView from './admin/SettingsView';
 
-const AdminView: React.FC = () => {
-  const [products, setProducts] = useState<Product[]>([]);
-  const [editingProduct, setEditingProduct] = useState<Product | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+type AdminView = 'dashboard' | 'products' | 'settings';
 
-  const loadProducts = async () => {
-    setIsLoading(true);
-    setError(null);
-    try {
-      const fetchedProducts = await productService.getProducts();
-      setProducts(fetchedProducts);
-    } catch (err) {
-      setError("Gagal memuat produk dari database.");
-      console.error(err);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+const AdminLayout: React.FC = () => {
+  const [currentView, setCurrentView] = useState<AdminView>('dashboard');
 
   useEffect(() => {
-    loadProducts();
+    const hash = window.location.hash.replace('#', '');
+    if (hash === 'products' || hash === 'settings') {
+      setCurrentView(hash);
+    } else {
+      setCurrentView('dashboard');
+    }
+
+    const handleHashChange = () => {
+      const newHash = window.location.hash.replace('#', '');
+      setCurrentView((newHash as AdminView) || 'dashboard');
+    };
+
+    window.addEventListener('hashchange', handleHashChange);
+    return () => window.removeEventListener('hashchange', handleHashChange);
   }, []);
 
-  const handleEdit = (product: Product) => {
-    setEditingProduct(product);
+  const navigateTo = (view: AdminView) => {
+    window.location.hash = view;
   };
 
-  const handleAddNew = () => {
-    const newProductTemplate: Product = {
-      id: `new-product-${Date.now()}`,
-      name: '',
-      category: '',
-      price: '',
-      shortDescription: '',
-      fullDescription: '',
-      highlights: [],
-      imageUrl: '',
-      variants: [],
-    };
-    setEditingProduct(newProductTemplate);
-  };
+  // FIX: Replaced JSX.Element with React.ReactElement to fix "Cannot find namespace 'JSX'" error.
+  const NavLink: React.FC<{ view: AdminView; label: string; icon: React.ReactElement }> = ({ view, label, icon }) => (
+    <a
+      href={`/admin#${view}`}
+      onClick={(e) => { e.preventDefault(); navigateTo(view); }}
+      className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-colors text-sm font-bold ${
+        currentView === view ? 'bg-slate-900 text-white' : 'text-slate-500 hover:bg-slate-100'
+      }`}
+    >
+      {icon}
+      <span>{label}</span>
+    </a>
+  );
 
-  const handleSave = async (product: Product) => {
-    try {
-      await productService.saveProduct(product);
-      setEditingProduct(null);
-      await loadProducts(); // Muat ulang data setelah menyimpan
-      alert('Produk berhasil disimpan!');
-    } catch (err) {
-      console.error(err);
-      alert('Gagal menyimpan produk. Cek konsol untuk detail.');
+  const renderContent = () => {
+    switch (currentView) {
+      case 'products':
+        return <ProductListView />;
+      case 'settings':
+        return <SettingsView />;
+      case 'dashboard':
+      default:
+        return <DashboardView />;
     }
   };
-
-  const handleDelete = async (productId: string) => {
-    if (window.confirm('Apakah Anda yakin ingin menghapus produk ini?')) {
-      try {
-        await productService.deleteProduct(productId);
-        await loadProducts(); // Muat ulang data setelah menghapus
-        alert('Produk berhasil dihapus!');
-      } catch (err) {
-        console.error(err);
-        alert('Gagal menghapus produk. Cek konsol untuk detail.');
-      }
-    }
-  };
-
-  const handleCancel = () => {
-    setEditingProduct(null);
-  };
-
-  if (editingProduct) {
-    return (
-      <div className="min-h-screen bg-slate-50 py-10 px-4 sm:px-6 lg:px-8">
-        <ProductEditor
-          product={editingProduct}
-          onSave={handleSave}
-          onCancel={handleCancel}
-        />
-      </div>
-    );
-  }
 
   return (
-    <div className="min-h-screen bg-slate-50 py-10 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-7xl mx-auto">
-        <div className="flex justify-between items-center mb-10">
-          <div>
-            <h1 className="text-3xl font-black text-slate-900">Panel Admin</h1>
-            <p className="text-slate-500 mt-1">Kelola produk di toko Anda.</p>
-          </div>
-          <button onClick={handleAddNew} className="px-5 py-3 bg-slate-900 text-white rounded-xl text-sm font-bold hover:bg-slate-700">
-            Tambah Produk Baru
-          </button>
+    <div className="min-h-screen bg-slate-50 flex">
+      {/* Sidebar */}
+      <aside className="w-64 bg-white border-r border-slate-200 p-4 flex-col hidden md:flex">
+        <div className="flex items-center gap-2 mb-10">
+          <span className="text-xl font-black text-slate-900 tracking-tighter">YMG</span>
+          <span className="text-xs font-bold text-slate-400 uppercase tracking-widest border-l border-slate-200 ml-2 pl-2">Admin</span>
         </div>
-
-        {isLoading && <p className="text-center text-slate-500 py-10">Memuat produk...</p>}
-        {error && <p className="text-center text-red-500 bg-red-50 p-4 rounded-lg">{error}</p>}
-        
-        {!isLoading && !error && (
-          <div className="bg-white rounded-3xl border border-slate-200 shadow-xl overflow-hidden">
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm text-left">
-                <thead className="bg-slate-50 text-xs text-slate-500 uppercase font-bold tracking-wider">
-                  <tr>
-                    <th scope="col" className="px-6 py-4">Produk</th>
-                    <th scope="col" className="px-6 py-4">Kategori</th>
-                    <th scope="col" className="px-6 py-4">Harga</th>
-                    <th scope="col" className="px-6 py-4 text-right">Aksi</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {products.map((product) => (
-                    <tr key={product.id} className="border-b border-slate-100 hover:bg-slate-50">
-                      <td className="px-6 py-4 font-bold text-slate-900 flex items-center gap-4">
-                          <img src={product.imageUrl} alt={product.name} className="w-10 h-10 rounded-md object-cover bg-slate-100" />
-                          {product.name}
-                      </td>
-                      <td className="px-6 py-4 text-slate-600">{product.category}</td>
-                      <td className="px-6 py-4 text-slate-600 font-bold">{product.price}</td>
-                      <td className="px-6 py-4 text-right space-x-2">
-                        <button onClick={() => handleEdit(product)} className="font-bold text-slate-600 hover:text-slate-900 text-xs">EDIT</button>
-                        <button onClick={() => handleDelete(product.id)} className="font-bold text-red-500 hover:text-red-700 text-xs">HAPUS</button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        )}
-         <div className="text-center mt-8">
-            <a href="/" className="text-xs font-bold text-slate-400 hover:text-slate-900">← Kembali ke Toko</a>
+        <nav className="flex flex-col gap-2">
+          <NavLink view="dashboard" label="Dashboard" icon={<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" /></svg>} />
+          <NavLink view="products" label="Produk" icon={<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" /></svg>} />
+          <NavLink view="settings" label="Pengaturan Toko" icon={<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>} />
+        </nav>
+        <div className="mt-auto">
+          <a href="/" className="text-xs font-bold text-slate-400 hover:text-slate-900 flex items-center gap-2">
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h5a3 3 0 013 3v1" /></svg>
+            Kembali ke Toko
+          </a>
         </div>
-      </div>
+      </aside>
+      
+      {/* Main Content */}
+      <main className="flex-1 p-4 md:p-10 overflow-y-auto">
+        {renderContent()}
+      </main>
     </div>
   );
 };
 
-export default AdminView;
+export default AdminLayout;

@@ -13,16 +13,16 @@ const DetailView: React.FC<DetailViewProps> = ({ product, selectedVariant, onVar
 
   useEffect(() => {
     window.scrollTo(0, 0);
-    // Secara otomatis memilih varian pertama jika belum ada yang dipilih
     if (!selectedVariant && product.variants.length > 0) {
       onVariantChange(product.variants[0]);
     }
   }, [product, selectedVariant, onVariantChange]);
 
+  const displayPrice = selectedVariant?.price || product.price;
+
   return (
     <div className="relative bg-white">
       <div className="grid grid-cols-1 md:grid-cols-12">
-        {/* === IMAGE COLUMN === */}
         <div className="md:col-span-7 lg:col-span-8 md:sticky md:top-0 md:h-screen">
           <div className="relative aspect-square md:aspect-auto md:h-full">
             <button onClick={onBack} className="absolute top-6 left-4 z-10 group inline-flex items-center gap-3 text-[10px] font-black text-slate-600 hover:text-slate-900 transition-all uppercase tracking-[0.25em]">
@@ -37,14 +37,13 @@ const DetailView: React.FC<DetailViewProps> = ({ product, selectedVariant, onVar
           </div>
         </div>
 
-        {/* === DETAILS COLUMN === */}
         <div className="md:col-span-5 lg:col-span-4 flex flex-col px-6 pt-10 pb-20 sm:px-12 sm:py-16">
           <h1 className="text-2xl md:text-4xl font-black text-slate-900 mb-2 leading-tight tracking-tighter">{product.name}</h1>
-          <div className="text-2xl md:text-3xl font-black text-slate-900 mb-6 tracking-tight">{product.price}</div>
+          <div className="text-2xl md:text-3xl font-black text-slate-900 mb-6 tracking-tight">{displayPrice}</div>
 
           <div className="mb-8">
             <h3 className="text-[10px] font-black text-slate-900 uppercase tracking-widest mb-4">
-              Varian Warna
+              Varian Warna {selectedVariant?.price && <span className="text-slate-400">(Harga mungkin berbeda)</span>}
             </h3>
             <div className="flex flex-wrap items-center gap-3">
               {product.variants.map(variant => (

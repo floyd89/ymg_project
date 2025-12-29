@@ -6,7 +6,7 @@ import FloatingBottomNav from './components/FloatingBottomNav';
 import HomeView from './views/HomeView';
 import DetailView from './views/DetailView';
 import AboutView from './views/AboutView';
-import AdminView from './views/AdminView';
+import AdminLayout from './views/AdminView'; // Renamed to AdminLayout
 import { View, Product, ProductVariant } from './types';
 import { productService } from './services/productService';
 
@@ -14,18 +14,21 @@ const App: React.FC = () => {
   const [pathname, setPathname] = useState(window.location.pathname);
 
   useEffect(() => {
+    // Analytics tracker simulation
+    const currentPageLoads = parseInt(localStorage.getItem('ymg_pageLoads') || '0', 10);
+    localStorage.setItem('ymg_pageLoads', (currentPageLoads + 1).toString());
+
     const onLocationChange = () => {
       setPathname(window.location.pathname);
     };
     window.addEventListener('popstate', onLocationChange);
-    // Also handle custom navigation events if needed in the future
     return () => {
       window.removeEventListener('popstate', onLocationChange);
     };
   }, []);
 
   if (pathname.startsWith('/admin')) {
-    return <AdminView />;
+    return <AdminLayout />;
   }
 
   // Storefront Logic
@@ -37,20 +40,15 @@ const App: React.FC = () => {
   const [selectedVariant, setSelectedVariant] = useState<ProductVariant | null>(null);
 
   useEffect(() => {
-    const loadProducts = async () => {
-      setLoading(true);
-      setError(null);
-      try {
-        const data = await productService.getProducts();
-        setProducts(data);
-      } catch (err) {
-        setError('Gagal memuat produk. Coba lagi nanti.');
-        console.error(err);
-      } finally {
-        setLoading(false);
-      }
-    };
-    loadProducts();
+    setLoading(true);
+    try {
+      setProducts(productService.getProducts());
+    } catch (err) {
+      setError('Gagal memuat produk.');
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
   const selectedProduct = useMemo(() => {
@@ -59,6 +57,10 @@ const App: React.FC = () => {
 
   const handleProductClick = (id: string) => {
     if (products.find(p => p.id === id)) {
+      // Analytics tracker simulation
+      const currentProductClicks = parseInt(localStorage.getItem('ymg_productClicks') || '0', 10);
+      localStorage.setItem('ymg_productClicks', (currentProductClicks + 1).toString());
+
       setSelectedProductId(id);
       setSelectedVariant(null);
       setCurrentView('detail');
@@ -81,8 +83,8 @@ const App: React.FC = () => {
   };
 
   const renderContent = () => {
-    if (loading) return <div className="flex-grow flex items-center justify-center"><p className="text-slate-500 font-bold animate-pulse">Memuat produk...</p></div>;
-    if (error) return <div className="flex-grow flex items-center justify-center"><div className="text-center p-8 bg-red-50 rounded-2xl"><p className="text-red-600 font-bold">{error}</p></div></div>;
+    if (loading) return <div className="flex-grow flex items-center justify-center"><p>Memuat...</p></div>;
+    if (error) return <div className="flex-grow flex items-center justify-center"><p className="text-red-500">{error}</p></div>;
 
     switch (currentView) {
       case 'home': return <HomeView products={products} onProductClick={handleProductClick} onGoProducts={navigateToProducts} />;

@@ -1,6 +1,7 @@
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Product, ProductVariant } from '../types';
+import { settingsService } from '../services/settingsService';
 
 interface FooterProps {
   product: Product | null;
@@ -8,23 +9,30 @@ interface FooterProps {
 }
 
 const Footer: React.FC<FooterProps> = ({ product, variant }) => {
-  const handleWhatsAppClick = () => {
-    if (!product || !variant) return;
+  const [whatsAppNumber, setWhatsAppNumber] = useState('');
 
-    const phoneNumber = "6281234567890"; // Ganti dengan nomor asli
-    const message = encodeURIComponent(`Halo YMG Official Store, saya tertarik dengan produk: ${product.name} (Warna: ${variant.colorName}, Harga: ${product.price}). Apakah produk ini masih tersedia?`);
-    window.open(`https://wa.me/${phoneNumber}?text=${message}`, '_blank');
+  useEffect(() => {
+    setWhatsAppNumber(settingsService.getSettings().whatsAppNumber);
+  }, []);
+
+  const handleWhatsAppClick = () => {
+    if (!product || !variant || !whatsAppNumber) return;
+
+    const priceToDisplay = variant.price || product.price;
+    const message = encodeURIComponent(`Halo YMG Official Store, saya tertarik dengan produk: ${product.name} (Warna: ${variant.colorName}, Harga: ${priceToDisplay}). Apakah produk ini masih tersedia?`);
+    window.open(`https://wa.me/${whatsAppNumber}?text=${message}`, '_blank');
   };
 
+  const displayPrice = variant?.price || product?.price;
+
   if (product) {
-    // Tampilan footer untuk halaman detail di desktop
     return (
       <footer className="sticky bottom-0 z-30 bg-white/90 backdrop-blur-md border-t border-slate-100 shadow-[0_-5px_30px_rgba(0,0,0,0.05)] hidden md:block">
         <div className="max-w-7xl mx-auto px-8">
             <div className="flex items-center justify-end h-24 gap-6">
                 <div>
-                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">{variant ? 'Harga Total' : 'Harga'}</p>
-                    <p className="text-2xl font-black text-slate-900">{product.price}</p>
+                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">{variant ? 'Harga Varian' : 'Harga'}</p>
+                    <p className="text-2xl font-black text-slate-900">{displayPrice}</p>
                 </div>
                 <button
                     onClick={handleWhatsAppClick}

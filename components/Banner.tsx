@@ -1,32 +1,21 @@
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { bannerService } from '../services/bannerService';
+import { Banner as BannerType } from '../types';
 
 interface BannerProps {
   onExploreClick: () => void;
 }
 
-const bannerItems = [
-  {
-    imgUrl: "https://picsum.photos/seed/fashion-lifestyle/1200/500",
-    title: "Koleksi Tas Terbaru",
-    subtitle: "Temukan gayamu, bawa ceritamu."
-  },
-  {
-    imgUrl: "https://picsum.photos/seed/urban-adventure/1200/500",
-    title: "Siap Untuk Petualangan Kota",
-    subtitle: "Ransel fungsional dengan sentuhan modern."
-  },
-  {
-    imgUrl: "https://picsum.photos/seed/elegant-style/1200/500",
-    title: "Elegan di Setiap Momen",
-    subtitle: "Tas jinjing premium untuk tampilan profesional."
-  }
-];
-
 const Banner: React.FC<BannerProps> = ({ onExploreClick }) => {
+  const [bannerItems, setBannerItems] = useState<BannerType[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
   const touchStartX = useRef(0);
+
+  useEffect(() => {
+    setBannerItems(bannerService.getBanners());
+  }, []);
 
   const resetTimeout = useCallback(() => {
     if (timeoutRef.current) {
@@ -35,8 +24,9 @@ const Banner: React.FC<BannerProps> = ({ onExploreClick }) => {
   }, []);
 
   const goToNext = useCallback(() => {
+    if (bannerItems.length === 0) return;
     setCurrentIndex(prevIndex => prevIndex === bannerItems.length - 1 ? 0 : prevIndex + 1);
-  }, []);
+  }, [bannerItems.length]);
 
   useEffect(() => {
     resetTimeout();
@@ -45,13 +35,14 @@ const Banner: React.FC<BannerProps> = ({ onExploreClick }) => {
   }, [currentIndex, goToNext, resetTimeout]);
 
   const goToPrev = () => {
+    if (bannerItems.length === 0) return;
     setCurrentIndex(prevIndex => prevIndex === 0 ? bannerItems.length - 1 : prevIndex - 1);
   };
 
   const goToSlide = (slideIndex: number) => {
     setCurrentIndex(slideIndex);
   };
-
+  
   const handleTouchStart = (e: React.TouchEvent<HTMLDivElement>) => {
     touchStartX.current = e.touches[0].clientX;
   };
@@ -67,24 +58,27 @@ const Banner: React.FC<BannerProps> = ({ onExploreClick }) => {
     }
   };
 
+  if (bannerItems.length === 0) {
+    return null; // Don't render banner if there's no data
+  }
+
   return (
     <section className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
       <div 
-        className="relative aspect-[2/1] md:aspect-[3/1] rounded-3xl overflow-hidden group shadow-lg shadow-slate-200/50"
+        className="relative aspect-[2/1] md:aspect-[3/1] rounded-3xl overflow-hidden group shadow-lg shadow-slate-200/50 bg-slate-100"
         onMouseEnter={resetTimeout}
         onMouseLeave={() => { timeoutRef.current = setTimeout(goToNext, 5000); }}
         onTouchStart={handleTouchStart}
         onTouchEnd={handleTouchEnd}
         aria-roledescription="carousel"
       >
-        {/* Slider Track */}
         <div 
           className="flex h-full transition-transform duration-700 ease-in-out"
           style={{ transform: `translateX(-${currentIndex * 100}%)` }}
         >
           {bannerItems.map((item, index) => (
             <div 
-              key={index} 
+              key={item.id} 
               className="relative w-full h-full flex-shrink-0"
               onClick={onExploreClick}
               role="group"
@@ -108,23 +102,9 @@ const Banner: React.FC<BannerProps> = ({ onExploreClick }) => {
           ))}
         </div>
 
-        {/* Navigation Buttons */}
-        <button 
-          onClick={goToPrev}
-          className="absolute top-1/2 left-4 transform -translate-y-1/2 z-10 w-10 h-10 bg-white/20 backdrop-blur-sm text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 hover:bg-white/40 active:scale-90"
-          aria-label="Previous slide"
-        >
-          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M15 19l-7-7 7-7" /></svg>
-        </button>
-        <button 
-          onClick={goToNext}
-          className="absolute top-1/2 right-4 transform -translate-y-1/2 z-10 w-10 h-10 bg-white/20 backdrop-blur-sm text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 hover:bg-white/40 active:scale-90"
-          aria-label="Next slide"
-        >
-          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M9 5l7 7-7 7" /></svg>
-        </button>
+        <button onClick={goToPrev} className="absolute top-1/2 left-4 transform -translate-y-1/2 z-10 w-10 h-10 bg-white/20 backdrop-blur-sm text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity" aria-label="Previous">‹</button>
+        <button onClick={goToNext} className="absolute top-1/2 right-4 transform -translate-y-1/2 z-10 w-10 h-10 bg-white/20 backdrop-blur-sm text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity" aria-label="Next">›</button>
 
-        {/* Indicator Dots */}
         <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-10 flex space-x-2">
           {bannerItems.map((_, slideIndex) => (
             <button 
