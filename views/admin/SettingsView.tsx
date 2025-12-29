@@ -6,6 +6,7 @@ import { AppSettings, Banner } from '../../types';
 import { uploadImage } from '../../utils/imageConverter';
 import AdminNotice from '../../components/admin/AdminNotice';
 import SetupNotice from '../../components/admin/SetupNotice';
+import SettingsSchemaNotice from '../../components/admin/SettingsSchemaNotice';
 
 const SettingsView: React.FC = () => {
   const [settings, setSettings] = useState<AppSettings>({ whatsAppNumber: '' });
@@ -14,6 +15,7 @@ const SettingsView: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [isUploading, setIsUploading] = useState<Record<string, boolean>>({});
   const [uploadError, setUploadError] = useState<string | null>(null);
+  const [saveError, setSaveError] = useState<string | null>(null);
 
   useEffect(() => {
     const loadData = async () => {
@@ -60,11 +62,16 @@ const SettingsView: React.FC = () => {
   };
 
   const handleSaveSettings = async () => {
+    setSaveError(null);
     try {
       await settingsService.saveSettings(settings);
       alert('Pengaturan berhasil disimpan!');
     } catch (err) {
-      alert(err instanceof Error ? err.message : 'Gagal menyimpan pengaturan.');
+      if (err instanceof Error && err.message.includes("column of 'settings' in the schema cache")) {
+        setSaveError('SCHEMA_MISMATCH_SETTINGS');
+      } else {
+        alert(err instanceof Error ? err.message : 'Gagal menyimpan pengaturan.');
+      }
     }
   };
 
@@ -116,6 +123,8 @@ const SettingsView: React.FC = () => {
       <AdminNotice />
       
       {uploadError === 'BUCKET_NOT_FOUND' && <SetupNotice onDismiss={() => setUploadError(null)} />}
+      {saveError === 'SCHEMA_MISMATCH_SETTINGS' && <SettingsSchemaNotice onDismiss={() => setSaveError(null)} />}
+
 
       <div className="border-b border-slate-200 mb-6 mt-6">
         <nav className="-mb-px flex gap-6 overflow-x-auto no-scrollbar">
