@@ -55,3 +55,10 @@ export interface Order {
   status: 'Diproses' | 'Dikirim' | 'Selesai' | 'Dibatalkan';
   items: OrderItem[];
 }
+
+// Tipe data baru untuk manajemen kategori
+export interface Category {
+  id: number;
+  name: string;
+  created_at?: string;
+}

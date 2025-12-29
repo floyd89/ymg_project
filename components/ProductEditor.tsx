@@ -1,19 +1,20 @@
 
 import React, { useState, useEffect } from 'react';
-import { Product, ProductVariant } from '../types';
+import { Product, ProductVariant, Category } from '../types';
 import { uploadImage } from '../utils/imageConverter';
 import SetupNotice from './admin/SetupNotice';
 import SchemaNotice from './admin/SchemaNotice';
 
 interface ProductEditorProps {
   product: Product | null;
+  categories: Category[];
   onSave: (product: Product) => void;
   onCancel: () => void;
   saveError: string | null;
   onDismissSaveError: () => void;
 }
 
-const ProductEditor: React.FC<ProductEditorProps> = ({ product, onSave, onCancel, saveError, onDismissSaveError }) => {
+const ProductEditor: React.FC<ProductEditorProps> = ({ product, categories, onSave, onCancel, saveError, onDismissSaveError }) => {
   const [productData, setProductData] = useState<Product | null>(null);
   const [isUploading, setIsUploading] = useState<Record<string, boolean>>({});
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
@@ -26,10 +27,11 @@ const ProductEditor: React.FC<ProductEditorProps> = ({ product, onSave, onCancel
           imageUrls: Array.isArray(product.imageUrls) ? product.imageUrls : [],
           stock: product.stock || 0,
           status: product.status || 'Draft',
+          category: product.category || (categories.length > 0 ? categories[0].name : ''),
       };
       setProductData(JSON.parse(JSON.stringify(initialData)));
     }
-  }, [product]);
+  }, [product, categories]);
 
   const handleImageFilesUpload = (files: FileList | null) => {
     if (!files || !productData) return;
@@ -94,6 +96,10 @@ const ProductEditor: React.FC<ProductEditorProps> = ({ product, onSave, onCancel
     if (productData) {
       if (productData.imageUrls.length === 0) {
         alert("Unggah setidaknya satu foto.");
+        return;
+      }
+      if (!productData.category) {
+        alert("Pilih kategori produk.");
         return;
       }
       onSave(productData);
@@ -175,7 +181,13 @@ const ProductEditor: React.FC<ProductEditorProps> = ({ product, onSave, onCancel
                     </div>
                     <div>
                         <label className="text-xs font-bold text-slate-500">Kategori</label>
-                        <input type="text" name="category" value={productData.category} onChange={handleChange} placeholder="cth: Ransel" required className="w-full p-3 mt-1 bg-slate-50 rounded-lg border border-slate-200 font-bold"/>
+                        <select name="category" value={productData.category} onChange={handleChange} required className="w-full p-3 mt-1 bg-slate-50 rounded-lg border border-slate-200 font-bold">
+                            <option value="" disabled>Pilih Kategori</option>
+                            {categories.map(cat => (
+                                <option key={cat.id} value={cat.name}>{cat.name}</option>
+                            ))}
+                        </select>
+                         {categories.length === 0 && <p className="text-xs text-red-500 mt-1">Belum ada kategori. Tambahkan di halaman Kategori.</p>}
                     </div>
                      <div>
                         <label className="text-xs font-bold text-slate-500">Stok</label>

@@ -33,7 +33,7 @@ const Navbar: React.FC<NavbarProps> = ({ onGoHome, onGoProducts, onGoAbout }) =>
           {/* Right Section - CTA */}
           <div className="flex items-center">
             <button onClick={onGoProducts} className="px-6 py-2.5 bg-slate-900 text-white rounded-full text-xs font-bold uppercase tracking-widest hover:bg-slate-800 transition-all transform active:scale-95">
-              Jelajahi
+              EXPLORE
             </button>
           </div>
         </div>

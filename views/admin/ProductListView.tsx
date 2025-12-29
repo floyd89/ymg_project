@@ -1,44 +1,49 @@
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { Product } from '../../types';
+import { Product, Category } from '../../types';
 import { productService } from '../../services/productService';
+import { categoryService } from '../../services/categoryService';
 import ProductEditor from '../../components/ProductEditor';
 import { supabase } from '../../lib/supabaseClient';
 import { formatCurrency } from '../../utils/formatters';
 
 const ProductListView: React.FC = () => {
   const [products, setProducts] = useState<Product[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [saveError, setSaveError] = useState<string | null>(null);
   
-  // State untuk filter
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'Published' | 'Draft'>('all');
   const [categoryFilter, setCategoryFilter] = useState('all');
 
-  const loadProducts = useCallback(async () => {
+  const loadData = useCallback(async () => {
     setError(null);
     try {
-      const fetchedProducts = await productService.getProducts();
+      const [fetchedProducts, fetchedCategories] = await Promise.all([
+        productService.getProducts(),
+        categoryService.getCategories()
+      ]);
       setProducts(fetchedProducts);
+      setCategories(fetchedCategories);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Gagal memuat produk.');
+      setError(err instanceof Error ? err.message : 'Gagal memuat data.');
     } finally {
       setIsLoading(false);
     }
   }, []);
 
   useEffect(() => {
-    loadProducts();
-    const channel = supabase.channel('admin:products').on('postgres_changes', { event: '*', schema: 'public', table: 'products' }, () => {
-        if (!editingProduct) loadProducts();
+    loadData();
+    const channel = supabase.channel('admin:products-categories').on('postgres_changes', { event: '*', schema: 'public', table: 'products' }, () => {
+        if (!editingProduct) loadData();
+    }).on('postgres_changes', { event: '*', schema: 'public', table: 'categories' }, () => {
+        if (!editingProduct) loadData();
     }).subscribe();
     return () => { supabase.removeChannel(channel); };
-  }, [loadProducts, editingProduct]);
-
-  const categories = useMemo(() => ['all', ...new Set(products.map(p => p.category))], [products]);
+  }, [loadData, editingProduct]);
 
   const filteredProducts = useMemo(() => {
     return products.filter(p => {
@@ -53,7 +58,7 @@ const ProductListView: React.FC = () => {
 
   const handleAddNew = () => {
     const newProductTemplate: Product = {
-      id: `new-product-${Date.now()}`, name: '', category: '', price: '',
+      id: `new-product-${Date.now()}`, name: '', category: categories[0]?.name || '', price: '',
       fullDescription: '', highlights: [], imageUrls: [], variants: [],
       stock: 0, status: 'Draft',
     };
@@ -65,7 +70,7 @@ const ProductListView: React.FC = () => {
     try {
       await productService.saveProduct(product);
       setEditingProduct(null);
-      await loadProducts(); 
+      await loadData(); 
       alert('Produk berhasil disimpan!');
     } catch (err) {
       if (err instanceof Error && err.message.includes("Could not find the 'imageUrls' column")) {
@@ -80,7 +85,7 @@ const ProductListView: React.FC = () => {
     if (window.confirm('Yakin ingin menghapus produk ini?')) {
       try {
         await productService.deleteProduct(productId);
-        await loadProducts(); 
+        await loadData(); 
         alert('Produk berhasil dihapus!');
       } catch (err) {
         alert(err instanceof Error ? err.message : 'Gagal menghapus produk.');
@@ -95,6 +100,7 @@ const ProductListView: React.FC = () => {
           product={editingProduct} onSave={handleSave}
           onCancel={() => { setEditingProduct(null); setSaveError(null); }}
           saveError={saveError} onDismissSaveError={() => setSaveError(null)}
+          categories={categories}
         />
       </div>
     );
@@ -122,7 +128,8 @@ const ProductListView: React.FC = () => {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <input type="text" placeholder="Cari produk..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="w-full p-2 bg-slate-50 rounded-lg border border-slate-200 font-medium text-sm focus:ring-2 focus:ring-slate-900 focus:border-slate-900" />
           <select value={categoryFilter} onChange={e => setCategoryFilter(e.target.value)} className="w-full p-2 bg-slate-50 rounded-lg border border-slate-200 font-medium text-sm focus:ring-2 focus:ring-slate-900 focus:border-slate-900">
-            {categories.map(cat => <option key={cat} value={cat}>{cat === 'all' ? 'Semua Kategori' : cat}</option>)}
+            <option value="all">Semua Kategori</option>
+            {categories.map(cat => <option key={cat.id} value={cat.name}>{cat.name}</option>)}
           </select>
           <select value={statusFilter} onChange={e => setStatusFilter(e.target.value as any)} className="w-full p-2 bg-slate-50 rounded-lg border border-slate-200 font-medium text-sm focus:ring-2 focus:ring-slate-900 focus:border-slate-900">
             <option value="all">Semua Status</option>
