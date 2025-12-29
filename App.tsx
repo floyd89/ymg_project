@@ -6,9 +6,10 @@ import FloatingBottomNav from './components/FloatingBottomNav';
 import HomeView from './views/HomeView';
 import DetailView from './views/DetailView';
 import AboutView from './views/AboutView';
-import { View, Product, ProductVariant } from './types';
+import CartView from './views/CartView';
+import Toast from './components/Toast';
+import { View, Product, ProductVariant, CartItem } from './types';
 
-// Data produk sekarang disimulasikan seolah-olah berasal dari API
 const fetchProductsFromAPI = (): Promise<Product[]> => {
   return new Promise(resolve => {
     setTimeout(() => {
@@ -20,12 +21,7 @@ const fetchProductsFromAPI = (): Promise<Product[]> => {
           price: 'Rp 450.000',
           shortDescription: 'Ransel serbaguna dengan desain modern untuk aktivitas harian dan perjalanan.',
           fullDescription: 'Didesain untuk petualang kota, Urban Explorer Backpack memadukan gaya dan fungsi. Dengan kompartemen laptop empuk dan banyak saku, tas ini siap menemani semua kesibukan Anda dari kantor hingga akhir pekan.',
-          highlights: [
-            'Bahan Kanvas Tahan Air',
-            'Kompartemen Laptop hingga 15"',
-            'Port Pengisian USB Eksternal',
-            'Bantalan Punggung Ergonomis',
-          ],
+          highlights: [],
           imageUrl: 'https://picsum.photos/seed/backpack-black/800/600',
           variants: [
             { id: 'ueb-black', colorName: 'Hitam Arang', colorHex: '#333333', imageUrl: 'https://picsum.photos/seed/backpack-black/800/600' },
@@ -40,12 +36,7 @@ const fetchProductsFromAPI = (): Promise<Product[]> => {
           price: 'Rp 650.000',
           shortDescription: 'Tas jinjing kulit klasik yang elegan untuk tampilan profesional.',
           fullDescription: 'Tingkatkan gaya Anda dengan Classic Leather Tote. Dibuat dari kulit sintetis premium, tas ini memiliki interior yang luas untuk membawa semua kebutuhan esensial Anda dengan gaya yang tak lekang oleh waktu.',
-          highlights: [
-            'Kulit Sintetis Kualitas Premium',
-            'Interior Luas dengan Saku Ritsleting',
-            'Tali Bahu yang Nyaman',
-            'Desain Abadi dan Profesional',
-          ],
+          highlights: [],
           imageUrl: 'https://picsum.photos/seed/tote-cognac/800/600',
           variants: [
             { id: 'clt-cognac', colorName: 'Coklat Cognac', colorHex: '#9F582A', imageUrl: 'https://picsum.photos/seed/tote-cognac/800/600' },
@@ -59,12 +50,7 @@ const fetchProductsFromAPI = (): Promise<Product[]> => {
           price: 'Rp 280.000',
           shortDescription: 'Tas selempang ringkas dan praktis untuk membawa barang-barang penting.',
           fullDescription: 'Untuk hari-hari saat Anda hanya perlu membawa yang terpenting. Nomad Sling Bag menawarkan kenyamanan dan akses cepat ke barang-barang Anda tanpa mengorbankan gaya. Sempurna untuk jalan-jalan atau konser.',
-          highlights: [
-            'Desain Ringkas dan Ringan',
-            'Bahan Nilon Tahan Lama',
-            'Beberapa Kompartemen Terorganisir',
-            'Tali yang Dapat Disesuaikan',
-          ],
+          highlights: [],
           imageUrl: 'https://picsum.photos/seed/sling-olive/800/600',
           variants: [
             { id: 'nsb-olive', colorName: 'Hijau Zaitun', colorHex: '#556B2F', imageUrl: 'https://picsum.photos/seed/sling-olive/800/600' },
@@ -79,12 +65,7 @@ const fetchProductsFromAPI = (): Promise<Product[]> => {
           price: 'Rp 550.000',
           shortDescription: 'Tas travel andal untuk perjalanan akhir pekan atau ke gym.',
           fullDescription: 'Siap untuk petualangan apa pun, Voyager Duffle Bag menawarkan ruang yang sangat luas dalam desain yang tangguh. Dilengkapi dengan kompartemen sepatu terpisah dan tali bahu yang bisa dilepas.',
-          highlights: [
-            'Kapasitas Besar 40L',
-            'Kompartemen Sepatu Berventilasi',
-            'Bahan Tahan Sobekan',
-            'Serbaguna untuk Travel & Olahraga',
-          ],
+          highlights: [],
           imageUrl: 'https://picsum.photos/seed/duffle-graphite/800/600',
           variants: [
             { id: 'vdb-graphite', colorName: 'Graphite', colorHex: '#555555', imageUrl: 'https://picsum.photos/seed/duffle-graphite/800/600' },
@@ -98,12 +79,7 @@ const fetchProductsFromAPI = (): Promise<Product[]> => {
           price: 'Rp 320.000',
           shortDescription: 'Tas selempang wanita dengan desain bersih dan sentuhan mewah.',
           fullDescription: 'Sederhana namun menawan, Minimalist Crossbody adalah aksesori yang sempurna untuk melengkapi pakaian apa pun. Ukurannya yang pas cukup untuk ponsel, dompet, dan kunci, menjadikannya pilihan ideal untuk siang dan malam.',
-          highlights: [
-            'Desain Struktural yang Rapi',
-            'Aksen Logam Emas',
-            'Penutup Magnetik yang Aman',
-            'Tali Rantai yang Dapat Dilepas',
-          ],
+          highlights: [],
           imageUrl: 'https://picsum.photos/seed/crossbody-blush/800/600',
           variants: [
             { id: 'mcb-blush', colorName: 'Merah Muda', colorHex: '#D8AFAF', imageUrl: 'https://picsum.photos/seed/crossbody-blush/800/600' },
@@ -118,12 +94,7 @@ const fetchProductsFromAPI = (): Promise<Product[]> => {
           price: 'Rp 750.000',
           shortDescription: 'Tas kerja modern 3-in-1: ransel, selempang, dan tas jinjing.',
           fullDescription: 'Tas paling adaptif untuk profesional modern. Tech Commuter Briefcase dapat diubah dari ransel menjadi tas selempang atau tas jinjing dalam sekejap. Dirancang untuk melindungi perangkat teknologi Anda dengan gaya.',
-          highlights: [
-            'Konvertibel 3-in-1',
-            'Kompartemen Teknologi Tahan Guncangan',
-            'Desain Tahan Percikan Air',
-            'Sistem Saku Cerdas',
-          ],
+          highlights: [],
           imageUrl: 'https://picsum.photos/seed/briefcase-jetblack/800/600',
           variants: [
             { id: 'tcb-jetblack', colorName: 'Hitam Pekat', colorHex: '#0A0A0A', imageUrl: 'https://picsum.photos/seed/briefcase-jetblack/800/600' },
@@ -131,10 +102,9 @@ const fetchProductsFromAPI = (): Promise<Product[]> => {
           ]
         }
       ]);
-    }, 1000); // Simulate 1 second network delay
+    }, 1000);
   });
 };
-
 
 const App: React.FC = () => {
   const [products, setProducts] = useState<Product[]>([]);
@@ -142,8 +112,9 @@ const App: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [currentView, setCurrentView] = useState<View>('home');
   const [selectedProductId, setSelectedProductId] = useState<string | null>(null);
-  const [selectedVariant, setSelectedVariant] = useState<ProductVariant | null>(null);
-  
+  const [cartItems, setCartItems] = useState<CartItem[]>([]);
+  const [toastMessage, setToastMessage] = useState<string>('');
+
   useEffect(() => {
     const loadProducts = async () => {
       try {
@@ -157,107 +128,76 @@ const App: React.FC = () => {
         setLoading(false);
       }
     };
-    
     loadProducts();
   }, []);
+  
+  useEffect(() => {
+    if (toastMessage) {
+      const timer = setTimeout(() => setToastMessage(''), 2000);
+      return () => clearTimeout(timer);
+    }
+  }, [toastMessage]);
 
   const selectedProduct = useMemo(() => {
     return products.find(p => p.id === selectedProductId) || null;
   }, [selectedProductId, products]);
 
   const handleProductClick = (id: string) => {
-    const product = products.find(p => p.id === id);
-    if (product) {
+    if (products.find(p => p.id === id)) {
       setSelectedProductId(id);
-      setSelectedVariant(null); // Jangan pilih varian otomatis
       setCurrentView('detail');
       window.scrollTo(0, 0);
     }
   };
+  
+  const handleAddToCart = (product: Product, selectedVariant: ProductVariant) => {
+    const cartId = `${product.id}-${selectedVariant.id}`;
+    const existingItem = cartItems.find(item => item.cartId === cartId);
+    if (!existingItem) {
+      setCartItems(prevItems => [...prevItems, { cartId, product, selectedVariant }]);
+      setToastMessage('Item ditambahkan ke troli!');
+    } else {
+      setToastMessage('Item sudah ada di troli.');
+    }
+  };
 
-  const navigateToHome = () => {
-    setCurrentView('home');
-    setSelectedProductId(null);
-    setSelectedVariant(null);
+  const handleRemoveFromCart = (cartId: string) => {
+    setCartItems(prevItems => prevItems.filter(item => item.cartId !== cartId));
+  };
+  
+  const navigateTo = (view: View) => {
+    setCurrentView(view);
+    if(view !== 'detail') setSelectedProductId(null);
     window.scrollTo(0, 0);
   };
 
   const navigateToProducts = () => {
-    setCurrentView('home');
-    setSelectedProductId(null);
-    setSelectedVariant(null);
-    setTimeout(() => {
-      const el = document.getElementById('products');
-      if (el) el.scrollIntoView({ behavior: 'smooth' });
-    }, 100);
-  };
-
-  const navigateToAbout = () => {
-    setCurrentView('about');
-    setSelectedProductId(null);
-    setSelectedVariant(null);
-    window.scrollTo(0, 0);
+    navigateTo('home');
+    setTimeout(() => document.getElementById('products')?.scrollIntoView({ behavior: 'smooth' }), 100);
   };
 
   const renderContent = () => {
-    if (loading) {
-      return (
-        <div className="flex-grow flex items-center justify-center">
-          <div className="text-center">
-            <p className="text-slate-500 font-bold animate-pulse">Memuat produk...</p>
-          </div>
-        </div>
-      );
-    }
-
-    if (error) {
-       return (
-        <div className="flex-grow flex items-center justify-center">
-          <div className="text-center p-8 bg-red-50 rounded-2xl">
-            <p className="text-red-600 font-bold">{error}</p>
-          </div>
-        </div>
-      );
-    }
+    if (loading) return <div className="flex-grow flex items-center justify-center"><p className="text-slate-500 font-bold animate-pulse">Memuat produk...</p></div>;
+    if (error) return <div className="flex-grow flex items-center justify-center"><div className="text-center p-8 bg-red-50 rounded-2xl"><p className="text-red-600 font-bold">{error}</p></div></div>;
 
     switch (currentView) {
-      case 'home':
-        return <HomeView products={products} onProductClick={handleProductClick} onGoProducts={navigateToProducts} />;
-      case 'detail':
-        return selectedProduct && <DetailView product={selectedProduct} selectedVariant={selectedVariant} onVariantChange={setSelectedVariant} onBack={navigateToHome} />;
-      case 'about':
-        return <AboutView onBack={navigateToHome} />;
-      default:
-        return <HomeView products={products} onProductClick={handleProductClick} onGoProducts={navigateToProducts} />;
+      case 'home': return <HomeView products={products} onProductClick={handleProductClick} onGoProducts={navigateToProducts} />;
+      case 'detail': return selectedProduct && <DetailView product={selectedProduct} onAddToCart={handleAddToCart} onBack={() => navigateTo('home')} />;
+      case 'about': return <AboutView onBack={() => navigateTo('home')} />;
+      case 'cart': return <CartView items={cartItems} onRemove={handleRemoveFromCart} onBack={() => navigateTo('home')} />;
+      default: return <HomeView products={products} onProductClick={handleProductClick} onGoProducts={navigateToProducts} />;
     }
   };
 
   return (
     <div className="min-h-screen flex flex-col bg-white">
-      <Navbar 
-        onGoHome={navigateToHome} 
-        onGoProducts={navigateToProducts} 
-        onGoAbout={navigateToAbout}
-      />
-      
-      <main 
-        key={currentView}
-        className="flex-grow animate-view-enter pb-24 md:pb-0"
-      >
+      <Navbar onGoHome={() => navigateTo('home')} onGoProducts={navigateToProducts} onGoAbout={() => navigateTo('about')} onGoToCart={() => navigateTo('cart')} cartItemCount={cartItems.length} />
+      <main key={currentView} className="flex-grow animate-view-enter pb-24 md:pb-0">
         {renderContent()}
       </main>
-
-      <FloatingBottomNav 
-        onHomeClick={navigateToHome} 
-        onAboutClick={navigateToAbout}
-        activeProduct={currentView === 'detail' ? selectedProduct : null}
-        activeVariant={currentView === 'detail' ? selectedVariant : null}
-      />
-
-      <Footer 
-        product={currentView === 'detail' ? selectedProduct : null}
-        variant={currentView === 'detail' ? selectedVariant : null}
-      />
+      <FloatingBottomNav onHomeClick={() => navigateTo('home')} onCartClick={() => navigateTo('cart')} cartItemCount={cartItems.length} />
+      <Toast message={toastMessage} show={!!toastMessage} />
+      <Footer />
     </div>
   );
 };

@@ -18,4 +18,10 @@ export interface Product {
   variants: ProductVariant[];
 }
 
+export interface CartItem {
+  cartId: string; // Unique ID for the cart entry, e.g., `${productId}-${variantId}`
+  product: Product;
+  selectedVariant: ProductVariant;
+}
+
 export type View = 'home' | 'detail' | 'about' | 'cart';
