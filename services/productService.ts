@@ -12,13 +12,29 @@ const getProducts = async (): Promise<Product[]> => {
     console.error("Error fetching products:", error);
     throw new Error(`Tidak dapat mengambil data produk: ${error.message}`);
   }
+
   // Supabase mungkin mengembalikan null jika tabel kosong
-  return (data || []).map(p => ({
-    ...p,
-    variants: p.variants || [],
-    highlights: p.highlights || [],
-    imageUrls: p.imageUrls || [], // Memastikan imageUrls selalu array
-  }));
+  return (data || []).map(p => {
+    // Fungsi sanitasi untuk memastikan imageUrls selalu berupa array.
+    // Ini menangani kasus di mana data lama mungkin masih menyimpan string tunggal
+    // atau jika kolomnya null.
+    const sanitizedImageUrls = (value: any): string[] => {
+      if (Array.isArray(value)) {
+        return value;
+      }
+      if (typeof value === 'string' && value.startsWith('http')) {
+        return [value]; // Ubah string URL tunggal menjadi array dengan satu elemen
+      }
+      return []; // Default ke array kosong jika null, undefined, atau format tidak dikenal
+    };
+
+    return {
+      ...p,
+      variants: p.variants || [],
+      highlights: p.highlights || [],
+      imageUrls: sanitizedImageUrls(p.imageUrls), // Gunakan fungsi sanitasi
+    };
+  });
 };
 
 const saveProduct = async (productToSave: Product): Promise<Product> => {
