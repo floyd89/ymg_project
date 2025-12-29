@@ -154,8 +154,18 @@ const ProductEditor: React.FC<ProductEditorProps> = ({ product, onSave, onCancel
                       {isUploading[`variant-${index}`] ? '...' : 'Upload'}
                     </label>
                   </div>
-                  <input type="text" name="colorName" value={variant.colorName} onChange={e => handleVariantChange(index, e)} placeholder="Nama Warna" required className="md:col-span-2 p-2 rounded-md border-slate-300 font-medium text-sm" />
-                  <input type="color" name="colorHex" value={variant.colorHex} onChange={e => handleVariantChange(index, e)} className="h-10 w-10 p-0 border-none rounded-md cursor-pointer" />
+                  <input type="text" name="colorName" value={variant.colorName} onChange={e => handleVariantChange(index, e)} placeholder="Nama Warna" required className="md:col-span-1 p-2 rounded-md border-slate-300 font-medium text-sm" />
+                  <div className="flex items-center gap-2 md:col-span-2">
+                    <div className="w-8 h-8 rounded-md border border-slate-200 shrink-0" style={{ backgroundColor: variant.colorHex || '#FFFFFF' }}></div>
+                    <input
+                      type="text"
+                      name="colorHex"
+                      value={variant.colorHex}
+                      onChange={e => handleVariantChange(index, e)}
+                      placeholder="#RRGGBB"
+                      className="w-full p-2 rounded-md border-slate-300 font-medium text-sm"
+                    />
+                  </div>
                   <input type="text" name="price" value={variant.price} onChange={e => handleVariantChange(index, e)} placeholder="Harga Varian (opsional)" className="md:col-span-1 p-2 rounded-md border-slate-300 font-medium text-sm" />
                   <button type="button" onClick={() => removeVariant(index)} className="md:col-span-1 text-red-500 hover:text-red-700 font-bold text-xs justify-self-end">HAPUS</button>
                 </div>
