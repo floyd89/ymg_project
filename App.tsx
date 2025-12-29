@@ -6,9 +6,7 @@ import FloatingBottomNav from './components/FloatingBottomNav';
 import HomeView from './views/HomeView';
 import DetailView from './views/DetailView';
 import AboutView from './views/AboutView';
-import CartView from './views/CartView';
-import Toast from './components/Toast';
-import { View, Product, ProductVariant, CartItem } from './types';
+import { View, Product, ProductVariant } from './types';
 
 const fetchProductsFromAPI = (): Promise<Product[]> => {
   return new Promise(resolve => {
@@ -112,8 +110,7 @@ const App: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [currentView, setCurrentView] = useState<View>('home');
   const [selectedProductId, setSelectedProductId] = useState<string | null>(null);
-  const [cartItems, setCartItems] = useState<CartItem[]>([]);
-  const [toastMessage, setToastMessage] = useState<string>('');
+  const [selectedVariant, setSelectedVariant] = useState<ProductVariant | null>(null);
 
   useEffect(() => {
     const loadProducts = async () => {
@@ -130,13 +127,6 @@ const App: React.FC = () => {
     };
     loadProducts();
   }, []);
-  
-  useEffect(() => {
-    if (toastMessage) {
-      const timer = setTimeout(() => setToastMessage(''), 2000);
-      return () => clearTimeout(timer);
-    }
-  }, [toastMessage]);
 
   const selectedProduct = useMemo(() => {
     return products.find(p => p.id === selectedProductId) || null;
@@ -145,29 +135,18 @@ const App: React.FC = () => {
   const handleProductClick = (id: string) => {
     if (products.find(p => p.id === id)) {
       setSelectedProductId(id);
+      setSelectedVariant(null);
       setCurrentView('detail');
       window.scrollTo(0, 0);
     }
   };
   
-  const handleAddToCart = (product: Product, selectedVariant: ProductVariant) => {
-    const cartId = `${product.id}-${selectedVariant.id}`;
-    const existingItem = cartItems.find(item => item.cartId === cartId);
-    if (!existingItem) {
-      setCartItems(prevItems => [...prevItems, { cartId, product, selectedVariant }]);
-      setToastMessage('Item ditambahkan ke troli!');
-    } else {
-      setToastMessage('Item sudah ada di troli.');
-    }
-  };
-
-  const handleRemoveFromCart = (cartId: string) => {
-    setCartItems(prevItems => prevItems.filter(item => item.cartId !== cartId));
-  };
-  
   const navigateTo = (view: View) => {
     setCurrentView(view);
-    if(view !== 'detail') setSelectedProductId(null);
+    if (view !== 'detail') {
+      setSelectedProductId(null);
+      setSelectedVariant(null);
+    }
     window.scrollTo(0, 0);
   };
 
@@ -182,22 +161,28 @@ const App: React.FC = () => {
 
     switch (currentView) {
       case 'home': return <HomeView products={products} onProductClick={handleProductClick} onGoProducts={navigateToProducts} />;
-      case 'detail': return selectedProduct && <DetailView product={selectedProduct} onAddToCart={handleAddToCart} onBack={() => navigateTo('home')} />;
+      case 'detail': return selectedProduct && <DetailView product={selectedProduct} selectedVariant={selectedVariant} onVariantChange={setSelectedVariant} onBack={() => navigateTo('home')} />;
       case 'about': return <AboutView onBack={() => navigateTo('home')} />;
-      case 'cart': return <CartView items={cartItems} onRemove={handleRemoveFromCart} onBack={() => navigateTo('home')} />;
       default: return <HomeView products={products} onProductClick={handleProductClick} onGoProducts={navigateToProducts} />;
     }
   };
 
   return (
     <div className="min-h-screen flex flex-col bg-white">
-      <Navbar onGoHome={() => navigateTo('home')} onGoProducts={navigateToProducts} onGoAbout={() => navigateTo('about')} onGoToCart={() => navigateTo('cart')} cartItemCount={cartItems.length} />
+      <Navbar onGoHome={() => navigateTo('home')} onGoProducts={navigateToProducts} onGoAbout={() => navigateTo('about')} />
       <main key={currentView} className="flex-grow animate-view-enter pb-24 md:pb-0">
         {renderContent()}
       </main>
-      <FloatingBottomNav onHomeClick={() => navigateTo('home')} onCartClick={() => navigateTo('cart')} cartItemCount={cartItems.length} />
-      <Toast message={toastMessage} show={!!toastMessage} />
-      <Footer />
+      <FloatingBottomNav 
+        onHomeClick={() => navigateTo('home')} 
+        onAboutClick={() => navigateTo('about')}
+        activeProduct={currentView === 'detail' ? selectedProduct : null}
+        activeVariant={currentView === 'detail' ? selectedVariant : null}
+      />
+      <Footer 
+        product={currentView === 'detail' ? selectedProduct : null}
+        variant={currentView === 'detail' ? selectedVariant : null}
+      />
     </div>
   );
 };

@@ -1,19 +1,48 @@
 
 import React from 'react';
+import { Product, ProductVariant } from '../types';
 
 interface FloatingBottomNavProps {
   onHomeClick: () => void;
-  onCartClick: () => void;
-  cartItemCount: number;
+  onAboutClick: () => void;
+  activeProduct: Product | null;
+  activeVariant: ProductVariant | null;
 }
 
-const FloatingBottomNav: React.FC<FloatingBottomNavProps> = ({ onHomeClick, onCartClick, cartItemCount }) => {
+const FloatingBottomNav: React.FC<FloatingBottomNavProps> = ({ onHomeClick, onAboutClick, activeProduct, activeVariant }) => {
   const handleWhatsAppClick = () => {
     const phoneNumber = "6281234567890"; // Ganti dengan nomor asli
-    const message = encodeURIComponent("Halo YMG Official Store, saya ingin bertanya mengenai koleksi tas Anda.");
+    let message;
+    if (activeProduct && activeVariant) {
+      message = encodeURIComponent(`Halo YMG Official Store, saya tertarik dengan produk: ${activeProduct.name} (Warna: ${activeVariant.colorName}, Harga: ${activeProduct.price}). Apakah produk ini masih tersedia?`);
+    } else {
+      message = encodeURIComponent("Halo YMG Official Store, saya ingin bertanya mengenai koleksi tas Anda.");
+    }
     window.open(`https://wa.me/${phoneNumber}?text=${message}`, '_blank');
   };
 
+  if (activeProduct) {
+    // Tampilan navigasi untuk halaman detail
+    return (
+      <div className="fixed bottom-0 left-0 w-full z-50 md:hidden bg-white/95 backdrop-blur-xl border-t border-slate-100 shadow-[0_-5px_30px_rgba(0,0,0,0.05)]">
+        <div className="flex items-center p-3 gap-3">
+          <div className="flex-grow">
+            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{activeVariant ? 'Harga' : 'Mulai dari'}</p>
+            <p className="text-xl font-black text-slate-900">{activeProduct.price}</p>
+          </div>
+          <button
+            onClick={handleWhatsAppClick}
+            disabled={!activeVariant}
+            className="w-full max-w-xs py-4 bg-slate-900 text-white rounded-2xl text-sm font-bold uppercase tracking-widest hover:bg-slate-800 transition-colors transform active:scale-95 shadow-lg shadow-slate-400/50 disabled:bg-slate-400 disabled:cursor-not-allowed flex items-center justify-center gap-3"
+          >
+            {activeVariant ? 'Beli Sekarang' : 'Pilih Varian Dulu'}
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // Tampilan navigasi default
   return (
     <div className="fixed bottom-0 left-0 w-full z-50 md:hidden bg-white/95 backdrop-blur-xl border-t border-slate-100 shadow-[0_-5px_30px_rgba(0,0,0,0.05)]">
       <div className="flex items-center justify-around py-2 px-2 pb-safe">
@@ -32,16 +61,11 @@ const FloatingBottomNav: React.FC<FloatingBottomNavProps> = ({ onHomeClick, onCa
           <span className="text-[8px] font-black uppercase tracking-[0.2em] text-slate-600 mt-2">Chat</span>
         </button>
 
-        {/* Cart Button */}
-        <button onClick={onCartClick} className="relative flex flex-col items-center justify-center flex-1 py-1 group active:scale-95 transition-transform" aria-label="Troli">
+        {/* About Button */}
+        <button onClick={onAboutClick} className="flex flex-col items-center justify-center flex-1 py-1 group active:scale-95 transition-transform" aria-label="Tentang Kami">
           <div className="text-slate-400 p-2 rounded-xl group-active:bg-slate-100 group-hover:text-slate-900 transition-colors">
-            <svg className="w-7 h-7" fill="currentColor" viewBox="0 0 24 24"><path d="M7 18c-1.1 0-1.99.9-1.99 2S5.9 22 7 22s2-.9 2-2-.9-2-2-2zM1 2v2h2l3.6 7.59-1.35 2.45c-.16.28-.25.61-.25.96 0 1.1.9 2 2 2h12v-2H7.42c-.14 0-.25-.11-.25-.25l.03-.12.9-1.63h7.45c.75 0 1.41-.41 1.75-1.03l3.58-6.49c.08-.14.12-.31.12-.48 0-.55-.45-1-1-1H5.21l-.94-2H1zm16 16c-1.1 0-1.99.9-1.99 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z" /></svg>
+            <svg className="w-7 h-7" fill="currentColor" viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" /></svg>
           </div>
-          {cartItemCount > 0 && (
-            <span className="absolute top-1 right-6 w-5 h-5 bg-emerald-500 text-white text-xs font-bold rounded-full flex items-center justify-center border-2 border-white">
-              {cartItemCount}
-            </span>
-          )}
         </button>
       </div>
     </div>
