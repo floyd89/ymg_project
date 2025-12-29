@@ -9,9 +9,10 @@ interface ProductCardProps {
 
 const ProductCard: React.FC<ProductCardProps> = ({ product, onClick }) => {
   return (
-    <div 
-      className="group bg-white rounded-2xl overflow-hidden border border-slate-100 shadow-sm hover:shadow-xl transition-all duration-500 cursor-pointer flex flex-col h-full"
+    <button 
+      className="group bg-white rounded-2xl overflow-hidden border border-slate-100 shadow-sm hover:shadow-xl transition-all duration-500 cursor-pointer flex flex-col h-full text-left"
       onClick={() => onClick(product.id)}
+      aria-label={`Lihat detail untuk ${product.name}`}
     >
       <div className="aspect-square overflow-hidden bg-slate-100 relative">
         <img 
@@ -32,7 +33,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onClick }) => {
           <span className="text-xs md:text-lg font-black text-slate-900 tracking-tight">{product.price}</span>
         </div>
       </div>
-    </div>
+    </button>
   );
 };
 
