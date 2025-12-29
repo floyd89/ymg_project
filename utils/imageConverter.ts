@@ -24,17 +24,21 @@ export const uploadImage = async (file: File): Promise<string> => {
 
   const { error: uploadError } = await supabase.storage
     .from(BUCKET_NAME)
-    .upload(filePath, file);
+    .upload(filePath, file, {
+      contentType: file.type, // Secara eksplisit memberitahu server tipe file-nya
+      upsert: false,
+    });
 
   if (uploadError) {
-    console.error('Gagal mengunggah gambar:', uploadError);
+    console.error('Supabase Storage Error:', uploadError);
     if (uploadError.message.includes('bucket not found')) {
       throw new Error("Gagal mengunggah: Bucket 'store-images' tidak ditemukan di Supabase Anda. Pastikan nama bucket sudah benar dan sudah dibuat.");
     }
     if (uploadError.message.includes('Ratelimit')) {
       throw new Error("Gagal mengunggah: Terlalu banyak permintaan ke server. Coba lagi dalam beberapa saat.");
     }
-    throw new Error('Gagal mengunggah gambar ke Supabase Storage.');
+    // Memberikan pesan error yang lebih informatif kepada pengguna
+    throw new Error(`Gagal mengunggah gambar. Pesan dari server: ${uploadError.message}. Ini bisa terjadi karena masalah izin pada bucket penyimpanan Anda.`);
   }
 
   // PENTING: Kembalikan HANYA nama file (filePath), bukan URL lengkap.

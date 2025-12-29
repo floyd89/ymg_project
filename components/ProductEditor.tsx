@@ -48,7 +48,8 @@ const ProductEditor: React.FC<ProductEditorProps> = ({ product, onSave, onCancel
             })
             .catch(error => {
                 console.error("Error uploading image:", error);
-                alert(`Gagal mengunggah ${file.name}.`);
+                // Menampilkan pesan error yang lebih detail dari fungsi upload
+                alert(error.message || `Gagal mengunggah ${file.name}.`);
             })
             .finally(() => {
                 setIsUploading(prev => {

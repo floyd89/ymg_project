@@ -3,6 +3,7 @@ import { AppSettings } from '../types';
 import { supabase } from '../lib/supabaseClient';
 
 const SETTINGS_ID = 1;
+const BUCKET_NAME = 'store-images';
 
 // Objek default yang lengkap untuk memastikan tidak ada nilai 'undefined'
 const defaultSettings: AppSettings = {
@@ -16,30 +17,46 @@ const defaultSettings: AppSettings = {
   telegramUrl: '',
 };
 
+const ensureFullUrl = (pathOrUrl: string | null | undefined): string | null => {
+    // Jika URL sudah lengkap (dimulai dengan http) atau tidak ada, kembalikan apa adanya.
+    if (!pathOrUrl || pathOrUrl.startsWith('http')) {
+        return pathOrUrl || null;
+    }
+
+    // Jika ini adalah nama file (path), bangun URL lengkapnya.
+    const supabaseUrlString = import.meta.env.VITE_SUPABASE_URL;
+    if (!supabaseUrlString) {
+        console.error("VITE_SUPABASE_URL tidak ditemukan, tidak dapat membangun URL gambar lengkap.");
+        return pathOrUrl; // Kembalikan path jika URL Supabase tidak tersedia
+    }
+    const cleanPath = pathOrUrl.startsWith('/') ? pathOrUrl.substring(1) : pathOrUrl;
+    return `${supabaseUrlString}/storage/v1/object/public/${BUCKET_NAME}/${cleanPath}`;
+}
+
 export const settingsService = {
   getSettings: async (): Promise<AppSettings> => {
     const { data, error } = await supabase
       .from('settings')
-      .select('*') // Ambil semua kolom
+      .select('*')
       .eq('id', SETTINGS_ID)
       .limit(1);
 
     if (error) {
       console.error("Error fetching settings:", error);
-      return defaultSettings; // Kembalikan default jika gagal
+      return defaultSettings;
     }
 
-    // Jika data ada, gabungkan dengan default untuk mengisi nilai yang mungkin null
     if (data && data.length > 0) {
-      return { ...defaultSettings, ...data[0] };
+      const dbSettings = data[0];
+      // Pastikan URL logo adalah URL lengkap sebelum digabungkan dengan default
+      dbSettings.storeLogoUrl = ensureFullUrl(dbSettings.storeLogoUrl);
+      return { ...defaultSettings, ...dbSettings };
     }
 
-    // Jika tidak ada baris data, kembalikan default
     return defaultSettings;
   },
 
   saveSettings: async (settings: AppSettings): Promise<void> => {
-    // Ambil semua properti dari objek settings, kecuali yang tidak ingin kita simpan
     const { ...settingsToSave } = settings;
 
     const { error } = await supabase
