@@ -18,7 +18,7 @@ const App: React.FC = () => {
     const onLocationChange = () => {
       setPathname(window.location.pathname);
     };
-    window.addEventListener('popstate', onLocationChange);
+    window.addEventListener('popstate', onLocationChange); // This handles browser back/forward for /admin path
     return () => {
       window.removeEventListener('popstate', onLocationChange);
     };
@@ -35,9 +35,40 @@ const App: React.FC = () => {
   const [currentView, setCurrentView] = useState<View>('home');
   const [selectedProductId, setSelectedProductId] = useState<string | null>(null);
   const [selectedVariant, setSelectedVariant] = useState<ProductVariant | null>(null);
+  
+  const handleBackNavigation = () => window.history.back();
+
+  // Effect to handle browser history (back/forward buttons)
+  useEffect(() => {
+    const handlePopState = (event: PopStateEvent) => {
+      const state = event.state || { view: 'home', productId: null };
+      setCurrentView(state.view);
+      setSelectedProductId(state.productId);
+      setSelectedVariant(null);
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
+
+  // Effect to set initial view based on URL hash
+  useEffect(() => {
+    const hash = window.location.hash;
+    const parts = hash.split('/');
+    if (parts[0] === '#detail' && parts[1]) {
+      setCurrentView('detail');
+      setSelectedProductId(parts[1]);
+      history.replaceState({ view: 'detail', productId: parts[1] }, '', hash);
+    } else if (hash === '#about') {
+      setCurrentView('about');
+      history.replaceState({ view: 'about' }, '', '#about');
+    } else {
+      setCurrentView('home');
+      history.replaceState({ view: 'home' }, '', window.location.pathname);
+    }
+  }, []);
 
   const loadProducts = useCallback(async () => {
-    // Tidak mengatur loading ke true di sini agar pembaruan real-time tidak berkedip
     setError(null);
     try {
       const fetchedProducts = await productService.getProducts();
@@ -46,30 +77,19 @@ const App: React.FC = () => {
       setError(err instanceof Error ? err.message : 'Gagal memuat produk.');
       console.error(err);
     } finally {
-      setLoading(false); // Hanya matikan loading setelah pengambilan pertama
+      setLoading(false);
     }
   }, []);
 
-
   useEffect(() => {
-    // Pengambilan data awal
     loadProducts();
-
-    // Membuat channel komunikasi real-time ke tabel 'products'
     const channel = supabase
       .channel('public:products')
-      .on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: 'products' },
-        (payload) => {
-          console.log('Perubahan terdeteksi di storefront!', payload);
-          // Ketika ada perubahan, ambil ulang semua data untuk memastikan konsistensi
-          loadProducts();
-        }
-      )
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'products' }, (payload) => {
+        console.log('Perubahan terdeteksi di storefront!', payload);
+        loadProducts();
+      })
       .subscribe();
-
-    // Membersihkan koneksi saat komponen tidak lagi digunakan
     return () => {
       supabase.removeChannel(channel);
     };
@@ -78,26 +98,38 @@ const App: React.FC = () => {
   const selectedProduct = useMemo(() => {
     return products.find(p => p.id === selectedProductId) || null;
   }, [selectedProductId, products]);
-
-  const handleProductClick = (id: string) => {
-    if (products.find(p => p.id === id)) {
-      setSelectedProductId(id);
-      setSelectedVariant(null);
-      setCurrentView('detail');
-      window.scrollTo(0, 0);
-    }
-  };
   
-  const navigateTo = (view: View) => {
-    setCurrentView(view);
-    if (view !== 'detail') {
-      setSelectedProductId(null);
-      setSelectedVariant(null);
+  const navigateTo = (view: View, productId?: string) => {
+    let hash = '';
+    let state: any = { view };
+
+    if (view === 'detail' && productId) {
+      hash = `#detail/${productId}`;
+      state.productId = productId;
+    } else if (view === 'about') {
+      hash = '#about';
     }
+
+    if (window.location.hash !== hash || window.location.pathname !== '/') {
+        history.pushState(state, '', hash || '/');
+    }
+    
+    setCurrentView(view);
+    setSelectedProductId(productId || null);
+    setSelectedVariant(null);
     window.scrollTo(0, 0);
   };
 
-  const navigateToProducts = () => {
+  const handleProductClick = (id: string) => {
+    if (products.find(p => p.id === id)) {
+      navigateTo('detail', id);
+    }
+  };
+
+  const navigateToHome = () => navigateTo('home');
+  const navigateToAbout = () => navigateTo('about');
+
+  const navigateToProductsSection = () => {
     navigateTo('home');
     setTimeout(() => document.getElementById('products')?.scrollIntoView({ behavior: 'smooth' }), 100);
   };
@@ -111,22 +143,22 @@ const App: React.FC = () => {
     if (error) return <div className="flex-grow flex items-center justify-center min-h-[50vh]"><p className="text-red-500 font-bold bg-red-50 p-4 rounded-lg">{error}</p></div>;
 
     switch (currentView) {
-      case 'home': return <HomeView products={products} onProductClick={handleProductClick} onGoProducts={navigateToProducts} />;
-      case 'detail': return selectedProduct && <DetailView product={selectedProduct} selectedVariant={selectedVariant} onVariantChange={setSelectedVariant} onBack={() => navigateTo('home')} />;
-      case 'about': return <AboutView onBack={() => navigateTo('home')} />;
-      default: return <HomeView products={products} onProductClick={handleProductClick} onGoProducts={navigateToProducts} />;
+      case 'home': return <HomeView products={products} onProductClick={handleProductClick} onGoProducts={navigateToProductsSection} />;
+      case 'detail': return selectedProduct && <DetailView product={selectedProduct} selectedVariant={selectedVariant} onVariantChange={setSelectedVariant} onBack={handleBackNavigation} />;
+      case 'about': return <AboutView onBack={handleBackNavigation} />;
+      default: return <HomeView products={products} onProductClick={handleProductClick} onGoProducts={navigateToProductsSection} />;
     }
   };
 
   return (
     <div className="min-h-screen flex flex-col bg-white">
-      <Navbar onGoHome={() => navigateTo('home')} onGoProducts={navigateToProducts} onGoAbout={() => navigateTo('about')} />
+      <Navbar onGoHome={navigateToHome} onGoProducts={navigateToProductsSection} onGoAbout={navigateToAbout} />
       <main key={currentView} className="flex-grow animate-view-enter pb-24 md:pb-0">
         {renderContent()}
       </main>
       <FloatingBottomNav 
-        onHomeClick={() => navigateTo('home')} 
-        onAboutClick={() => navigateTo('about')}
+        onHomeClick={navigateToHome} 
+        onAboutClick={navigateToAbout}
         activeProduct={currentView === 'detail' ? selectedProduct : null}
         activeVariant={currentView === 'detail' ? selectedVariant : null}
       />
