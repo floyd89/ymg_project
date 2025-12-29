@@ -2,6 +2,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Product, ProductVariant } from '../types';
 import { uploadImage } from '../utils/imageConverter';
+import SetupNotice from './admin/SetupNotice';
 
 interface ProductEditorProps {
   product: Product | null;
@@ -13,6 +14,7 @@ const ProductEditor: React.FC<ProductEditorProps> = ({ product, onSave, onCancel
   const [productData, setProductData] = useState<Product | null>(null);
   const [isUploading, setIsUploading] = useState<Record<string, boolean>>({});
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
+  const [uploadError, setUploadError] = useState<string | null>(null);
 
   useEffect(() => {
     if (product) {
@@ -41,15 +43,19 @@ const ProductEditor: React.FC<ProductEditorProps> = ({ product, onSave, onCancel
         setIsUploading(prev => ({ ...prev, [uploadKey]: true }));
         uploadImage(file)
             .then(url => {
+                setUploadError(null); // Hapus error jika unggahan berhasil
                 setProductData(prev => {
                     if (!prev) return null;
                     return { ...prev, imageUrls: [...prev.imageUrls, url] };
                 });
             })
             .catch(error => {
-                console.error("Error uploading image:", error);
-                // Menampilkan pesan error yang lebih detail dari fungsi upload
-                alert(error.message || `Gagal mengunggah ${file.name}.`);
+                if (error.message.includes('Bucket not found')) {
+                    setUploadError('BUCKET_NOT_FOUND');
+                } else {
+                    console.error("Error uploading image:", error);
+                    alert(error.message || `Gagal mengunggah ${file.name}.`);
+                }
             })
             .finally(() => {
                 setIsUploading(prev => {
@@ -144,6 +150,8 @@ const ProductEditor: React.FC<ProductEditorProps> = ({ product, onSave, onCancel
       <form onSubmit={handleSubmit}>
         <h2 className="text-2xl font-black text-slate-900 mb-8">{product?.id.startsWith('new-product') ? 'Tambah Produk Baru' : 'Edit Produk'}</h2>
         
+        {uploadError === 'BUCKET_NOT_FOUND' && <SetupNotice onDismiss={() => setUploadError(null)} />}
+
         <div className="space-y-8">
           {/* Section: Basic Info */}
           <div className="space-y-4">

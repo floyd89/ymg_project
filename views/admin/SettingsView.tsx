@@ -5,6 +5,7 @@ import { bannerService } from '../../services/bannerService';
 import { AppSettings, Banner } from '../../types';
 import { uploadImage } from '../../utils/imageConverter';
 import AdminNotice from '../../components/admin/AdminNotice';
+import SetupNotice from '../../components/admin/SetupNotice';
 
 const SettingsView: React.FC = () => {
   const [settings, setSettings] = useState<AppSettings>({ whatsAppNumber: '' });
@@ -12,6 +13,7 @@ const SettingsView: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'general' | 'banners' | 'profile'>('general');
   const [isLoading, setIsLoading] = useState(true);
   const [isUploading, setIsUploading] = useState<Record<string, boolean>>({});
+  const [uploadError, setUploadError] = useState<string | null>(null);
 
   useEffect(() => {
     const loadData = async () => {
@@ -44,9 +46,14 @@ const SettingsView: React.FC = () => {
     try {
       const imageUrl = await uploadImage(file);
       setSettings(prev => ({ ...prev, storeLogoUrl: imageUrl }));
+      setUploadError(null);
     } catch (error) {
-      alert("Gagal mengunggah logo.");
-      console.error(error);
+      if (error instanceof Error && error.message.includes('Bucket not found')) {
+        setUploadError('BUCKET_NOT_FOUND');
+      } else {
+        alert("Gagal mengunggah logo.");
+        console.error(error);
+      }
     } finally {
       setIsUploading(prev => ({ ...prev, logo: false }));
     }
@@ -77,9 +84,14 @@ const SettingsView: React.FC = () => {
         const newBanners = [...banners];
         newBanners[index].imgUrl = imageUrl;
         setBanners(newBanners);
+        setUploadError(null);
       } catch (error) {
-          console.error("Gagal mengunggah gambar:", error);
-          alert("Gagal memproses gambar. Pastikan bucket storage Anda 'store-images' sudah publik.");
+          if (error instanceof Error && error.message.includes('Bucket not found')) {
+              setUploadError('BUCKET_NOT_FOUND');
+          } else {
+              console.error("Gagal mengunggah gambar:", error);
+              alert("Gagal memproses gambar. Pastikan bucket storage Anda 'store-images' sudah publik.");
+          }
       } finally {
         setIsUploading(prev => ({...prev, [uploadKey]: false}));
       }
@@ -102,6 +114,8 @@ const SettingsView: React.FC = () => {
       </div>
       
       <AdminNotice />
+      
+      {uploadError === 'BUCKET_NOT_FOUND' && <SetupNotice onDismiss={() => setUploadError(null)} />}
 
       <div className="border-b border-slate-200 mb-6 mt-6">
         <nav className="-mb-px flex gap-6 overflow-x-auto no-scrollbar">
