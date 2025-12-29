@@ -37,10 +37,11 @@ const App: React.FC = () => {
   const [selectedVariant, setSelectedVariant] = useState<ProductVariant | null>(null);
 
   useEffect(() => {
-    const loadProducts = () => {
+    const loadProducts = async () => {
       setLoading(true);
+      setError(null);
       try {
-        const data = productService.getProducts();
+        const data = await productService.getProducts();
         setProducts(data);
       } catch (err) {
         setError('Gagal memuat produk. Coba lagi nanti.');

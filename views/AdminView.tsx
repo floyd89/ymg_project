@@ -7,14 +7,26 @@ import ProductEditor from '../components/ProductEditor';
 const AdminView: React.FC = () => {
   const [products, setProducts] = useState<Product[]>([]);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const loadProducts = async () => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const fetchedProducts = await productService.getProducts();
+      setProducts(fetchedProducts);
+    } catch (err) {
+      setError("Gagal memuat produk dari database.");
+      console.error(err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   useEffect(() => {
     loadProducts();
   }, []);
-
-  const loadProducts = () => {
-    setProducts(productService.getProducts());
-  };
 
   const handleEdit = (product: Product) => {
     setEditingProduct(product);
@@ -35,18 +47,28 @@ const AdminView: React.FC = () => {
     setEditingProduct(newProductTemplate);
   };
 
-  const handleSave = (product: Product) => {
-    productService.saveProduct(product);
-    setEditingProduct(null);
-    loadProducts();
-    alert('Produk berhasil disimpan!');
+  const handleSave = async (product: Product) => {
+    try {
+      await productService.saveProduct(product);
+      setEditingProduct(null);
+      await loadProducts(); // Muat ulang data setelah menyimpan
+      alert('Produk berhasil disimpan!');
+    } catch (err) {
+      console.error(err);
+      alert('Gagal menyimpan produk. Cek konsol untuk detail.');
+    }
   };
 
-  const handleDelete = (productId: string) => {
+  const handleDelete = async (productId: string) => {
     if (window.confirm('Apakah Anda yakin ingin menghapus produk ini?')) {
-      productService.deleteProduct(productId);
-      loadProducts();
-      alert('Produk berhasil dihapus!');
+      try {
+        await productService.deleteProduct(productId);
+        await loadProducts(); // Muat ulang data setelah menghapus
+        alert('Produk berhasil dihapus!');
+      } catch (err) {
+        console.error(err);
+        alert('Gagal menghapus produk. Cek konsol untuk detail.');
+      }
     }
   };
 
@@ -79,36 +101,41 @@ const AdminView: React.FC = () => {
           </button>
         </div>
 
-        <div className="bg-white rounded-3xl border border-slate-200 shadow-xl overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm text-left">
-              <thead className="bg-slate-50 text-xs text-slate-500 uppercase font-bold tracking-wider">
-                <tr>
-                  <th scope="col" className="px-6 py-4">Produk</th>
-                  <th scope="col" className="px-6 py-4">Kategori</th>
-                  <th scope="col" className="px-6 py-4">Harga</th>
-                  <th scope="col" className="px-6 py-4 text-right">Aksi</th>
-                </tr>
-              </thead>
-              <tbody>
-                {products.map((product) => (
-                  <tr key={product.id} className="border-b border-slate-100 hover:bg-slate-50">
-                    <td className="px-6 py-4 font-bold text-slate-900 flex items-center gap-4">
-                        <img src={product.imageUrl} alt={product.name} className="w-10 h-10 rounded-md object-cover bg-slate-100" />
-                        {product.name}
-                    </td>
-                    <td className="px-6 py-4 text-slate-600">{product.category}</td>
-                    <td className="px-6 py-4 text-slate-600 font-bold">{product.price}</td>
-                    <td className="px-6 py-4 text-right space-x-2">
-                      <button onClick={() => handleEdit(product)} className="font-bold text-slate-600 hover:text-slate-900 text-xs">EDIT</button>
-                      <button onClick={() => handleDelete(product.id)} className="font-bold text-red-500 hover:text-red-700 text-xs">HAPUS</button>
-                    </td>
+        {isLoading && <p className="text-center text-slate-500 py-10">Memuat produk...</p>}
+        {error && <p className="text-center text-red-500 bg-red-50 p-4 rounded-lg">{error}</p>}
+        
+        {!isLoading && !error && (
+          <div className="bg-white rounded-3xl border border-slate-200 shadow-xl overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm text-left">
+                <thead className="bg-slate-50 text-xs text-slate-500 uppercase font-bold tracking-wider">
+                  <tr>
+                    <th scope="col" className="px-6 py-4">Produk</th>
+                    <th scope="col" className="px-6 py-4">Kategori</th>
+                    <th scope="col" className="px-6 py-4">Harga</th>
+                    <th scope="col" className="px-6 py-4 text-right">Aksi</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {products.map((product) => (
+                    <tr key={product.id} className="border-b border-slate-100 hover:bg-slate-50">
+                      <td className="px-6 py-4 font-bold text-slate-900 flex items-center gap-4">
+                          <img src={product.imageUrl} alt={product.name} className="w-10 h-10 rounded-md object-cover bg-slate-100" />
+                          {product.name}
+                      </td>
+                      <td className="px-6 py-4 text-slate-600">{product.category}</td>
+                      <td className="px-6 py-4 text-slate-600 font-bold">{product.price}</td>
+                      <td className="px-6 py-4 text-right space-x-2">
+                        <button onClick={() => handleEdit(product)} className="font-bold text-slate-600 hover:text-slate-900 text-xs">EDIT</button>
+                        <button onClick={() => handleDelete(product.id)} className="font-bold text-red-500 hover:text-red-700 text-xs">HAPUS</button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
-        </div>
+        )}
          <div className="text-center mt-8">
             <a href="/" className="text-xs font-bold text-slate-400 hover:text-slate-900">← Kembali ke Toko</a>
         </div>
