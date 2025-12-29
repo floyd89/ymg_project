@@ -1,50 +1,107 @@
 
 import React, { useState, useEffect } from 'react';
-import AdminNotice from '../../components/admin/AdminNotice';
+import { orderService } from '../../services/orderService';
+import { Order } from '../../types';
+import { formatCurrency } from '../../utils/formatters';
 
-// FIX: Replaced JSX.Element with React.ReactElement to fix "Cannot find namespace 'JSX'" error.
-const StatCard: React.FC<{ title: string; value: string; icon: React.ReactElement }> = ({ title, value, icon }) => (
-  <div className="bg-white p-6 rounded-2xl border border-slate-200 flex items-center gap-6">
-    <div className="bg-slate-100 text-slate-900 p-3 rounded-xl">{icon}</div>
-    <div>
-      <p className="text-sm font-bold text-slate-500">{title}</p>
+const StatCard: React.FC<{ title: string; value: string; icon: React.ReactElement; change?: string; changeType?: 'increase' | 'decrease' }> = ({ title, value, icon, change, changeType }) => (
+  <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+    <div className="flex items-center gap-4">
+      <div className="bg-slate-100 text-slate-600 p-3 rounded-xl">{icon}</div>
+      <p className="text-sm font-bold text-slate-500 uppercase tracking-wider">{title}</p>
+    </div>
+    <div className="mt-4 flex items-baseline gap-4">
       <p className="text-3xl font-black text-slate-900">{value}</p>
+      {change && (
+        <span className={`text-xs font-bold ${changeType === 'increase' ? 'text-emerald-500' : 'text-red-500'}`}>
+          {change}
+        </span>
+      )}
     </div>
   </div>
 );
 
+const ChartPlaceholder: React.FC = () => (
+    <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+        <h3 className="text-sm font-bold text-slate-500 uppercase tracking-wider mb-4">Grafik Penjualan (30 Hari)</h3>
+        <div className="aspect-video bg-slate-50 rounded-xl flex items-center justify-center">
+            <p className="text-xs font-bold text-slate-400">Visualisasi data akan muncul di sini.</p>
+        </div>
+    </div>
+);
+
 const DashboardView: React.FC = () => {
-  const [stats, setStats] = useState({ pageLoads: 0, productClicks: 0 });
+  const [recentOrders, setRecentOrders] = useState<Order[]>([]);
 
   useEffect(() => {
-    const pageLoads = parseInt(localStorage.getItem('ymg_pageLoads') || '0', 10);
-    const productClicks = parseInt(localStorage.getItem('ymg_productClicks') || '0', 10);
-    setStats({ pageLoads, productClicks });
+    const fetchRecentOrders = async () => {
+      const allOrders = await orderService.getOrders();
+      setRecentOrders(allOrders.slice(0, 5)); // Ambil 5 pesanan terbaru
+    };
+    fetchRecentOrders();
   }, []);
 
+  const StatusBadge: React.FC<{ status: Order['status'] }> = ({ status }) => {
+    const baseClasses = "px-2 py-1 text-[10px] font-black rounded-full";
+    const statusClasses = {
+      'Diproses': 'bg-blue-100 text-blue-800',
+      'Dikirim': 'bg-yellow-100 text-yellow-800',
+      'Selesai': 'bg-emerald-100 text-emerald-800',
+      'Dibatalkan': 'bg-red-100 text-red-800',
+    };
+    return <span className={`${baseClasses} ${statusClasses[status]}`}>{status.toUpperCase()}</span>;
+  };
+
   return (
-    <div className="animate-view-enter space-y-10">
+    <div className="animate-view-enter space-y-8">
       <div>
         <h1 className="text-3xl font-black text-slate-900">Dashboard</h1>
-        <p className="text-slate-500 mt-1">Ringkasan aktivitas di toko Anda (data simulasi).</p>
+        <p className="text-slate-500 mt-1">Selamat datang kembali! Ini ringkasan aktivitas toko Anda.</p>
       </div>
-      
-      <AdminNotice />
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         <StatCard 
-          title="Total Muatan Halaman" 
-          value={stats.pageLoads.toLocaleString('id-ID')}
-          icon={<svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>}
+          title="Total Penjualan" 
+          value="Rp 7.8M"
+          icon={<svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" /></svg>}
+          change="+12.5% vs bln lalu"
+          changeType="increase"
         />
         <StatCard 
-          title="Total Klik Produk" 
-          value={stats.productClicks.toLocaleString('id-ID')}
-          icon={<svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" /></svg>}
+          title="Total Pesanan" 
+          value="152"
+          icon={<svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" /></svg>}
+          change="-2.1% vs bln lalu"
+          changeType="decrease"
+        />
+        <StatCard 
+          title="Produk Terlaris" 
+          value="Ransel Urban"
+          icon={<svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M5 3v4M3 5h4M6 17v4m-2-2h4M14 3v4m-2-2h4M15 17v4m-2-2h4M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>}
         />
       </div>
-       <div className="text-center bg-yellow-50 text-yellow-800 p-4 rounded-xl border border-yellow-200 text-xs font-bold">
-        Catatan: Data analitik ini hanya simulasi dan dilacak dari aktivitas di peramban Anda saat ini.
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="lg:col-span-2">
+            <ChartPlaceholder />
+        </div>
+        <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+            <h3 className="text-sm font-bold text-slate-500 uppercase tracking-wider mb-4">Pesanan Terbaru</h3>
+            <div className="space-y-4">
+                {recentOrders.length > 0 ? recentOrders.map(order => (
+                    <div key={order.id} className="flex justify-between items-center">
+                        <div>
+                            <p className="font-bold text-slate-800 text-sm">{order.customerName}</p>
+                            <p className="text-xs text-slate-400">{order.id}</p>
+                        </div>
+                        <div className="text-right">
+                            <p className="font-bold text-slate-800 text-sm">{formatCurrency(String(order.total))}</p>
+                            <StatusBadge status={order.status} />
+                        </div>
+                    </div>
+                )) : <p className="text-xs text-slate-400 text-center py-8">Belum ada pesanan.</p>}
+            </div>
+        </div>
       </div>
     </div>
   );

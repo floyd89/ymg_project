@@ -15,71 +15,62 @@ const getProducts = async (): Promise<Product[]> => {
 
   const supabaseUrlString = import.meta.env.VITE_SUPABASE_URL;
   if (!supabaseUrlString) {
-      console.error("VITE_SUPABASE_URL tidak ditemukan. URL gambar mungkin tidak dapat dikoreksi.");
+      console.error("VITE_SUPABASE_URL tidak ditemukan.");
       // Jika URL Supabase tidak ada, kembalikan data apa adanya setelah sanitasi dasar
       return (data || []).map(p => ({
         ...p,
         variants: p.variants || [],
         highlights: p.highlights || [],
-        imageUrls: Array.isArray(p.imageUrls) ? p.imageUrls : (p.imageUrls ? [p.imageUrls] : []),
+        imageUrls: Array.isArray(p.imageUrls) ? p.imageUrls : [],
+        stock: p.stock || 0,
+        status: p.status || 'Draft',
       }));
   }
   const correctHostname = new URL(supabaseUrlString).hostname;
   const BUCKET_NAME = 'store-images';
 
   return (data || []).map(p => {
-    // 1. Sanitasi dasar untuk memastikan imageUrls selalu berupa array
     const sanitizedImageUrls = (value: any): string[] => {
-      if (Array.isArray(value)) {
-        return value;
-      }
-      if (typeof value === 'string') {
-        // Ini bisa berupa URL tunggal atau nama file tunggal
-        return [value]; 
-      }
-      return []; // Default ke array kosong jika format tidak dikenal
+      if (Array.isArray(value)) return value;
+      if (typeof value === 'string') return [value]; 
+      return [];
     };
 
     const initialUrls = sanitizedImageUrls(p.imageUrls);
 
-    // 2. Koreksi atau bangun URL yang lengkap untuk setiap item
     const finalUrls = initialUrls.map(url => {
-        if (!url) return ''; // Abaikan nilai null atau kosong
-
-        // Cek apakah ini URL lengkap atau hanya path/nama file
+        if (!url) return '';
         if (url.startsWith('http')) {
-            // Ini adalah URL lengkap, lakukan koreksi hostname jika perlu
             try {
                 const imageUrlObject = new URL(url);
                 if (imageUrlObject.hostname !== correctHostname) {
                     imageUrlObject.hostname = correctHostname;
                     return imageUrlObject.toString();
                 }
-                return url; // URL sudah benar
+                return url;
             } catch (e) {
-                console.warn(`URL gambar lengkap tidak valid: ${url}`);
-                return ''; // Abaikan jika format URL-nya rusak
+                console.warn(`URL gambar tidak valid: ${url}`);
+                return '';
             }
         } else {
-            // Ini kemungkinan besar adalah nama file. Bangun URL lengkap.
-            // Pastikan tidak ada garis miring di awal path agar URL tidak rusak
             const cleanPath = url.startsWith('/') ? url.substring(1) : url;
             return `${supabaseUrlString}/storage/v1/object/public/${BUCKET_NAME}/${cleanPath}`;
         }
-    }).filter(Boolean); // Hapus string kosong dari hasil akhir
+    }).filter(Boolean); 
 
     return {
       ...p,
       variants: p.variants || [],
       highlights: p.highlights || [],
-      imageUrls: finalUrls, // Gunakan URL yang sudah final
+      imageUrls: finalUrls,
+      stock: p.stock || 0, // Pastikan nilai default
+      status: p.status || 'Draft', // Pastikan nilai default
     };
   });
 };
 
 const saveProduct = async (productToSave: Product): Promise<Product> => {
-  // Hapus properti 'created_at' jika ada, karena ini diatur oleh database
-  const { created_at, ...upsertData } = productToSave as Product & { created_at?: string };
+  const { created_at, ...upsertData } = productToSave as any;
 
   if (upsertData.id.startsWith('new-product-')) {
     upsertData.id = `prod-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
