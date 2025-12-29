@@ -1,3 +1,4 @@
+
 import { supabase } from '../lib/supabaseClient';
 
 export const fileToBase64 = (file: File): Promise<string> => {
@@ -27,16 +28,17 @@ export const uploadImage = async (file: File): Promise<string> => {
 
   if (uploadError) {
     console.error('Gagal mengunggah gambar:', uploadError);
-    throw new Error('Gagal mengunggah gambar.');
+    if (uploadError.message.includes('bucket not found')) {
+      throw new Error("Gagal mengunggah: Bucket 'store-images' tidak ditemukan di Supabase Anda. Pastikan nama bucket sudah benar dan sudah dibuat.");
+    }
+    if (uploadError.message.includes('Ratelimit')) {
+      throw new Error("Gagal mengunggah: Terlalu banyak permintaan ke server. Coba lagi dalam beberapa saat.");
+    }
+    throw new Error('Gagal mengunggah gambar ke Supabase Storage.');
   }
 
-  const { data } = supabase.storage
-    .from(BUCKET_NAME)
-    .getPublicUrl(filePath);
-
-  if (!data.publicUrl) {
-    throw new Error('Tidak dapat memperoleh URL publik untuk gambar yang diunggah.');
-  }
-
-  return data.publicUrl;
+  // PENTING: Kembalikan HANYA nama file (filePath), bukan URL lengkap.
+  // Logika di `productService` akan membangun URL lengkap saat data diambil.
+  // Ini membuat sistem lebih kuat terhadap perubahan URL Supabase di masa depan.
+  return filePath;
 };
