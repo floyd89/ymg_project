@@ -62,7 +62,6 @@ const ProductListView: React.FC = () => {
       name: '',
       category: '',
       price: '',
-      shortDescription: '',
       fullDescription: '',
       highlights: [],
       imageUrl: '',

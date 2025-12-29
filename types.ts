@@ -12,7 +12,6 @@ export interface Product {
   name: string;
   category: string;
   price: string;
-  shortDescription: string;
   fullDescription: string;
   highlights: string[];
   imageUrl: string; // Default image

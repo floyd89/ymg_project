@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { Product, ProductVariant } from '../types';
 import { uploadImage } from '../utils/imageConverter';
@@ -113,13 +114,15 @@ const ProductEditor: React.FC<ProductEditorProps> = ({ product, onSave, onCancel
                   <input type="text" name="price" value={productData.price} onChange={handleChange} placeholder="Harga Utama" required className="w-full p-3 bg-slate-50 rounded-lg border border-slate-200 font-bold focus:ring-2 focus:ring-slate-900 focus:border-slate-900 outline-none" />
                 </div>
               </div>
-              <div className="flex flex-col items-center">
-                  <img src={productData.imageUrl || 'https://via.placeholder.com/150'} alt="Gambar utama" className="w-32 h-32 object-cover rounded-lg bg-slate-100 mb-2" />
+              <div className="flex flex-col items-center justify-center">
+                  <img src={productData.imageUrl || 'https://via.placeholder.com/150'} alt="Gambar utama" className="w-32 h-32 object-cover rounded-lg bg-slate-100 mb-3" />
                   <input type="file" accept="image/*" id="main-image-upload" onChange={(e) => handleMainImageChange(e.target.files?.[0] ?? null)} className="hidden"/>
-                  <label htmlFor="main-image-upload" className="text-xs font-bold text-slate-500 hover:text-slate-900 cursor-pointer">{isUploading['main'] ? 'Mengunggah...' : 'Ubah Gambar Utama'}</label>
+                  <label htmlFor="main-image-upload" className="flex items-center text-xs font-bold text-slate-500 hover:text-slate-900 cursor-pointer transition-colors">
+                    <svg className="w-4 h-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" /></svg>
+                    {isUploading['main'] ? 'Mengunggah...' : 'Ubah Gambar'}
+                  </label>
               </div>
           </div>
-          <textarea name="shortDescription" value={productData.shortDescription} onChange={handleChange} placeholder="Deskripsi Singkat" required rows={2} className="w-full p-3 bg-slate-50 rounded-lg border border-slate-200 font-bold focus:ring-2 focus:ring-slate-900 focus:border-slate-900 outline-none" />
           <textarea name="fullDescription" value={productData.fullDescription} onChange={handleChange} placeholder="Deskripsi Lengkap" required rows={4} className="w-full p-3 bg-slate-50 rounded-lg border border-slate-200 font-bold focus:ring-2 focus:ring-slate-900 focus:border-slate-900 outline-none" />
           
           <div className="pt-4">
@@ -130,7 +133,10 @@ const ProductEditor: React.FC<ProductEditorProps> = ({ product, onSave, onCancel
                   <div className="flex flex-col items-center">
                     <img src={variant.imageUrl || 'https://via.placeholder.com/80'} alt={variant.colorName} className="w-14 h-14 rounded-md object-cover bg-slate-200 mb-1" />
                     <input type="file" accept="image/*" id={`variant-img-${index}`} onChange={e => handleVariantImageChange(index, e.target.files?.[0] ?? null)} className="hidden"/>
-                    <label htmlFor={`variant-img-${index}`} className="text-[10px] font-bold text-slate-500 cursor-pointer hover:underline">{isUploading[`variant-${index}`] ? 'Loading...' : 'Upload'}</label>
+                    <label htmlFor={`variant-img-${index}`} className="flex items-center text-[10px] font-bold text-slate-500 cursor-pointer hover:text-slate-900 transition-colors">
+                      <svg className="w-3 h-3 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" /></svg>
+                      {isUploading[`variant-${index}`] ? '...' : 'Upload'}
+                    </label>
                   </div>
                   <input type="text" name="colorName" value={variant.colorName} onChange={e => handleVariantChange(index, e)} placeholder="Nama Warna" required className="md:col-span-2 p-2 rounded-md border-slate-300 font-medium text-sm" />
                   <input type="color" name="colorHex" value={variant.colorHex} onChange={e => handleVariantChange(index, e)} className="h-10 w-10 p-0 border-none rounded-md cursor-pointer" />
