@@ -18,4 +18,4 @@ export interface Product {
   variants: ProductVariant[];
 }
 
-export type View = 'home' | 'detail' | 'about';
+export type View = 'home' | 'detail' | 'about' | 'cart';

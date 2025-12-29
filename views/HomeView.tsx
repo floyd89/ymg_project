@@ -1,23 +1,25 @@
 
 import React, { useState, useMemo } from 'react';
-import { products } from '../data';
+import { Product } from '../types';
 import ProductCard from '../components/ProductCard';
 import Banner from '../components/Banner';
 
 interface HomeViewProps {
+  products: Product[];
   onProductClick: (id: string) => void;
   onGoProducts: () => void;
 }
 
-const HomeView: React.FC<HomeViewProps> = ({ onProductClick, onGoProducts }) => {
+const HomeView: React.FC<HomeViewProps> = ({ products, onProductClick, onGoProducts }) => {
   const [searchTerm, setSearchTerm] = useState('');
 
   const filteredProducts = useMemo(() => {
+    if (!products) return [];
     return products.filter(product => 
       product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       product.category.toLowerCase().includes(searchTerm.toLowerCase())
     );
-  }, [searchTerm]);
+  }, [searchTerm, products]);
 
   return (
     <div className="space-y-8 md:space-y-12 py-6 md:py-10">
