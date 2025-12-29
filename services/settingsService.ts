@@ -10,8 +10,10 @@ const defaultSettings: AppSettings = {
   storeName: 'YMG Official Store',
   storeTagline: 'Fashion & Accessories',
   storeLogoUrl: 'https://picsum.photos/seed/ymg-store/600/600',
-  instagramUrl: 'https://instagram.com',
-  tiktokUrl: 'https://tiktok.com',
+  instagramUrl: '',
+  tiktokUrl: '',
+  facebookUrl: '',
+  telegramUrl: '',
 };
 
 export const settingsService = {

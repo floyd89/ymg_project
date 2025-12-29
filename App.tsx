@@ -103,7 +103,11 @@ const App: React.FC = () => {
   };
 
   const renderContent = () => {
-    if (loading) return <div className="flex-grow flex items-center justify-center min-h-[50vh]"><p className="font-bold text-slate-500">Memuat koleksi produk...</p></div>;
+    if (loading) return (
+      <div className="flex-grow flex items-center justify-center min-h-[50vh]">
+        <div className="w-12 h-12 border-4 border-slate-200 border-t-slate-900 rounded-full animate-spin"></div>
+      </div>
+    );
     if (error) return <div className="flex-grow flex items-center justify-center min-h-[50vh]"><p className="text-red-500 font-bold bg-red-50 p-4 rounded-lg">{error}</p></div>;
 
     switch (currentView) {

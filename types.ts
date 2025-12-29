@@ -31,6 +31,8 @@ export interface AppSettings {
   storeLogoUrl?: string | null;
   instagramUrl?: string | null;
   tiktokUrl?: string | null;
+  facebookUrl?: string | null;
+  telegramUrl?: string | null;
 }
 
 export type View = 'home' | 'detail' | 'about';

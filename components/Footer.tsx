@@ -73,11 +73,6 @@ const Footer: React.FC<FooterProps> = ({ product, variant }) => {
         <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
           © 2025 YMG OFFICIAL STORE
         </p>
-        <div className="mt-4">
-          <a href="/admin" className="text-xs text-slate-300 hover:text-slate-500 transition-colors">
-            Admin Panel
-          </a>
-        </div>
       </div>
     </footer>
   );

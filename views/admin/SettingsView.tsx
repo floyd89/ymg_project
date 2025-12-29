@@ -158,6 +158,16 @@ const SettingsView: React.FC = () => {
               <input type="text" id="tiktokUrl" name="tiktokUrl" value={settings.tiktokUrl || ''} onChange={handleSettingsChange} placeholder="https://tiktok.com/@username" className="w-full p-3 mt-2 bg-slate-50 rounded-lg border border-slate-200 font-bold focus:ring-2 focus:ring-slate-900 focus:border-slate-900 outline-none" />
               <p className="text-xs text-slate-400 mt-1">Contoh: https://tiktok.com/@ymgstore</p>
             </div>
+            <div>
+              <label htmlFor="facebookUrl" className="text-sm font-bold text-slate-700">URL Facebook</label>
+              <input type="text" id="facebookUrl" name="facebookUrl" value={settings.facebookUrl || ''} onChange={handleSettingsChange} placeholder="https://facebook.com/username" className="w-full p-3 mt-2 bg-slate-50 rounded-lg border border-slate-200 font-bold focus:ring-2 focus:ring-slate-900 focus:border-slate-900 outline-none" />
+              <p className="text-xs text-slate-400 mt-1">Contoh: https://facebook.com/ymgstore</p>
+            </div>
+             <div>
+              <label htmlFor="telegramUrl" className="text-sm font-bold text-slate-700">URL Telegram</label>
+              <input type="text" id="telegramUrl" name="telegramUrl" value={settings.telegramUrl || ''} onChange={handleSettingsChange} placeholder="https://t.me/username" className="w-full p-3 mt-2 bg-slate-50 rounded-lg border border-slate-200 font-bold focus:ring-2 focus:ring-slate-900 focus:border-slate-900 outline-none" />
+              <p className="text-xs text-slate-400 mt-1">Contoh: https://t.me/ymgstore</p>
+            </div>
           </div>
           <div className="mt-8">
             <button onClick={handleSaveSettings} className="px-5 py-2 bg-slate-900 text-white rounded-lg text-sm font-bold hover:bg-slate-700">Simpan Profil</button>
