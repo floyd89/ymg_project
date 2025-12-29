@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useMemo } from 'react';
 import { Product, ProductVariant } from '../types';
 import { formatCurrency } from '../utils/formatters';
@@ -103,7 +104,7 @@ const DetailView: React.FC<DetailViewProps> = ({ product, selectedVariant, onVar
             <p className="text-slate-500 leading-relaxed text-sm md:text-base font-medium whitespace-pre-wrap">{product.fullDescription}</p>
           </div>
           
-          <div className="mt-auto pt-8 border-t border-slate-100">
+          <div className="hidden md:block mt-auto pt-8 border-t border-slate-100">
              <button
                 onClick={handleWhatsAppClick}
                 disabled={!isReadyToBuy}
