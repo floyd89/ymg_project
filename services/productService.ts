@@ -13,7 +13,6 @@ const getProducts = async (): Promise<Product[]> => {
     throw new Error(`Tidak dapat mengambil data produk: ${error.message}`);
   }
 
-  // Ambil hostname yang benar dari URL Supabase yang ada di pengaturan
   const supabaseUrlString = import.meta.env.VITE_SUPABASE_URL;
   if (!supabaseUrlString) {
       console.error("VITE_SUPABASE_URL tidak ditemukan. URL gambar mungkin tidak dapat dikoreksi.");
@@ -26,38 +25,46 @@ const getProducts = async (): Promise<Product[]> => {
       }));
   }
   const correctHostname = new URL(supabaseUrlString).hostname;
+  const BUCKET_NAME = 'store-images';
 
-  // Supabase mungkin mengembalikan null jika tabel kosong
   return (data || []).map(p => {
     // 1. Sanitasi dasar untuk memastikan imageUrls selalu berupa array
     const sanitizedImageUrls = (value: any): string[] => {
       if (Array.isArray(value)) {
         return value;
       }
-      if (typeof value === 'string' && value.startsWith('http')) {
-        return [value]; // Ubah string URL tunggal menjadi array
+      if (typeof value === 'string') {
+        // Ini bisa berupa URL tunggal atau nama file tunggal
+        return [value]; 
       }
       return []; // Default ke array kosong jika format tidak dikenal
     };
 
     const initialUrls = sanitizedImageUrls(p.imageUrls);
 
-    // 2. Koreksi hostname pada setiap URL jika tidak cocok
-    const correctedUrls = initialUrls.map(url => {
-        if (!url || !url.startsWith('http')) {
-            return ''; // Abaikan URL yang tidak valid
-        }
-        try {
-            const imageUrlObject = new URL(url);
-            // Bandingkan hostname dan ganti jika berbeda
-            if (imageUrlObject.hostname !== correctHostname) {
-                imageUrlObject.hostname = correctHostname;
-                return imageUrlObject.toString();
+    // 2. Koreksi atau bangun URL yang lengkap untuk setiap item
+    const finalUrls = initialUrls.map(url => {
+        if (!url) return ''; // Abaikan nilai null atau kosong
+
+        // Cek apakah ini URL lengkap atau hanya path/nama file
+        if (url.startsWith('http')) {
+            // Ini adalah URL lengkap, lakukan koreksi hostname jika perlu
+            try {
+                const imageUrlObject = new URL(url);
+                if (imageUrlObject.hostname !== correctHostname) {
+                    imageUrlObject.hostname = correctHostname;
+                    return imageUrlObject.toString();
+                }
+                return url; // URL sudah benar
+            } catch (e) {
+                console.warn(`URL gambar lengkap tidak valid: ${url}`);
+                return ''; // Abaikan jika format URL-nya rusak
             }
-            return url; // URL sudah benar
-        } catch (e) {
-            console.warn(`URL gambar tidak valid terdeteksi untuk produk ${p.id}: ${url}`);
-            return '';
+        } else {
+            // Ini kemungkinan besar adalah nama file. Bangun URL lengkap.
+            // Pastikan tidak ada garis miring di awal path agar URL tidak rusak
+            const cleanPath = url.startsWith('/') ? url.substring(1) : url;
+            return `${supabaseUrlString}/storage/v1/object/public/${BUCKET_NAME}/${cleanPath}`;
         }
     }).filter(Boolean); // Hapus string kosong dari hasil akhir
 
@@ -65,14 +72,13 @@ const getProducts = async (): Promise<Product[]> => {
       ...p,
       variants: p.variants || [],
       highlights: p.highlights || [],
-      imageUrls: correctedUrls, // Gunakan URL yang sudah dikoreksi
+      imageUrls: finalUrls, // Gunakan URL yang sudah final
     };
   });
 };
 
 const saveProduct = async (productToSave: Product): Promise<Product> => {
   // Hapus properti 'created_at' jika ada, karena ini diatur oleh database
-  // FIX: Cast productToSave to a type that includes the optional `created_at` property, which Supabase adds but is not in our `Product` type. This prevents a TypeScript error.
   const { created_at, ...upsertData } = productToSave as Product & { created_at?: string };
 
   if (upsertData.id.startsWith('new-product-')) {
