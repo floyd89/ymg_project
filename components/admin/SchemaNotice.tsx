@@ -7,7 +7,7 @@ const SchemaNotice: React.FC<{ onDismiss?: () => void }> = ({ onDismiss }) => (
         <div>
             <p className="font-bold text-lg">❌ Kesalahan Struktur Database</p>
             <p className="text-sm mt-2 mb-4">
-              Gagal menyimpan karena error: <strong>"Could not find the 'imageUrls' column"</strong>. Ini berarti tabel <code>products</code> Anda di database Supabase kekurangan kolom yang diperlukan untuk menyimpan daftar gambar produk.
+              Gagal menyimpan karena beberapa kolom yang diperlukan (seperti <code>imageUrls</code>, <code>status</code>, atau <code>stock</code>) tidak ditemukan di tabel <code>products</code> Anda.
             </p>
         </div>
         {onDismiss && (
@@ -24,30 +24,25 @@ const SchemaNotice: React.FC<{ onDismiss?: () => void }> = ({ onDismiss }) => (
           </ol>
           <pre className="mt-2 text-[10px] bg-red-200 text-red-900 p-2 rounded-md overflow-x-auto">
             <code>
-{`-- Menambahkan kolom untuk menyimpan daftar URL gambar
+{`-- Menambahkan kolom yang diperlukan untuk fitur terbaru
 ALTER TABLE public.products
-ADD COLUMN IF NOT EXISTS "imageUrls" text[] NULL DEFAULT '{}';
+ADD COLUMN IF NOT EXISTS "imageUrls" text[] NULL DEFAULT '{}',
+ADD COLUMN IF NOT EXISTS "stock" integer NOT NULL DEFAULT 0,
+ADD COLUMN IF NOT EXISTS "status" text NOT NULL DEFAULT 'Draft';
 
 -- Komentar: Perintah ini aman dijalankan berkali-kali.`}
             </code>
           </pre>
+          <p className="mt-2 text-[10px] italic">Setelah menjalankan SQL, silakan refresh halaman ini untuk menyegarkan cache skema.</p>
       </div>
        <div>
           <p className="font-bold mt-3 mb-2">Alternatif: Tambah Kolom Melalui Antarmuka</p>
-          <ol className="list-decimal list-inside space-y-1 text-[11px]">
-            <li>Pergi ke <strong>Table Editor</strong> (ikon tabel di sidebar).</li>
-            <li>Pilih tabel <strong>products</strong>.</li>
-            <li>Klik tombol <strong>"+ Add column"</strong> di kanan atas.</li>
-            <li>Isi formulir:
-                <ul className="list-disc list-inside pl-4 mt-1">
-                    <li>Name: <code className="font-bold bg-red-200 p-0.5 rounded">imageUrls</code></li>
-                    <li>Type: cari dan pilih <code className="font-bold bg-red-200 p-0.5 rounded">text</code></li>
-                    <li>Aktifkan toggle <strong>"Define as array"</strong> di bawah pilihan tipe.</li>
-                    <li>Default Value: isi dengan <code className="font-bold bg-red-200 p-0.5 rounded">{`{}`}</code> (kurung kurawal kosong).</li>
-                </ul>
-            </li>
-            <li>Klik <strong>Save</strong>. Setelah berhasil, kembali ke sini dan coba simpan lagi.</li>
-          </ol>
+          <p className="text-[10px] mb-2">Pastikan ketiga kolom ini ada di tabel <code>products</code>:</p>
+          <ul className="list-disc list-inside pl-4 space-y-1 text-[11px]">
+            <li><code>imageUrls</code> (Type: <code>text[]</code>, Array)</li>
+            <li><code>stock</code> (Type: <code>int4</code>/<code>integer</code>)</li>
+            <li><code>status</code> (Type: <code>text</code>)</li>
+          </ul>
       </div>
     </div>
   </div>

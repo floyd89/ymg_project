@@ -73,8 +73,13 @@ const ProductListView: React.FC = () => {
       await loadData(); 
       alert('Produk berhasil disimpan!');
     } catch (err) {
-      if (err instanceof Error && err.message.includes("Could not find the 'imageUrls' column")) {
-        setSaveError('SCHEMA_MISMATCH_IMAGEURLS');
+      const errMsg = err instanceof Error ? err.message : '';
+      if (
+        errMsg.includes("Could not find the 'imageUrls' column") || 
+        errMsg.includes("Could not find the 'status' column") ||
+        errMsg.includes("Could not find the 'stock' column")
+      ) {
+        setSaveError('SCHEMA_MISMATCH_IMAGEURLS'); // Menggunakan flag yang sama untuk SchemaNotice
       } else {
         alert(err instanceof Error ? err.message : 'Terjadi kesalahan saat menyimpan produk.');
       }
