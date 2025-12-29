@@ -111,7 +111,11 @@ const SettingsView: React.FC = () => {
         </nav>
       </div>
 
-      {isLoading && <p className="font-bold text-slate-500">Memuat pengaturan...</p>}
+      {isLoading && (
+        <div className="flex justify-center items-center p-20">
+            <div className="w-12 h-12 border-4 border-slate-200 border-t-slate-900 rounded-full animate-spin"></div>
+        </div>
+      )}
 
       {!isLoading && activeTab === 'general' && (
         <div className="bg-white p-6 md:p-8 rounded-2xl border border-slate-200">

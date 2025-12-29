@@ -111,7 +111,11 @@ const ProductListView: React.FC = () => {
 
   const PageNotice: React.FC = () => {
     if (isLoading) {
-      return <div className="text-center p-10 font-bold text-slate-500">Memuat produk dari database...</div>;
+      return (
+        <div className="flex justify-center items-center p-20">
+            <div className="w-12 h-12 border-4 border-slate-200 border-t-slate-900 rounded-full animate-spin"></div>
+        </div>
+      );
     }
     if (error) {
       return <div className="text-center p-10 font-bold text-red-600 bg-red-50 rounded-xl">{error}</div>;

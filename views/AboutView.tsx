@@ -99,14 +99,12 @@ const AboutView: React.FC<AboutViewProps> = ({ onBack }) => {
       </button>
 
       <div className="w-full flex flex-col items-center justify-center space-y-8 animate-view-enter">
-        <div className="relative bg-white p-2 rounded-[2rem] border border-slate-100">
-          <div className="w-40 h-40 md:w-48 md:h-48 rounded-[1.5rem] overflow-hidden bg-slate-100">
-            <img 
-              src={settings.storeLogoUrl || "https://via.placeholder.com/600"} 
-              alt={settings.storeName || "Store Logo"}
-              className="w-full h-full object-cover"
-            />
-          </div>
+        <div className="w-40 h-40 md:w-48 md:h-48 rounded-[1.5rem] overflow-hidden bg-slate-100">
+          <img 
+            src={settings.storeLogoUrl || "https://via.placeholder.com/600"} 
+            alt={settings.storeName || "Store Logo"}
+            className="w-full h-full object-cover"
+          />
         </div>
 
         <div className="text-center space-y-2">
