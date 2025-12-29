@@ -9,7 +9,7 @@ const getProducts = async (): Promise<Product[]> => {
 
   if (error) {
     console.error("Error fetching products:", error);
-    throw new Error('Tidak dapat mengambil data produk');
+    throw new Error(`Tidak dapat mengambil data produk: ${error.message}`);
   }
   // Supabase mungkin mengembalikan null jika tabel kosong
   return (data || []).map(p => ({
@@ -36,7 +36,7 @@ const saveProduct = async (productToSave: Product): Promise<Product> => {
 
   if (error) {
     console.error("Error saving product:", error);
-    throw new Error('Gagal menyimpan produk');
+    throw new Error(`Gagal menyimpan produk: ${error.message}`);
   }
 
   return data;
@@ -50,7 +50,7 @@ const deleteProduct = async (productId: string): Promise<void> => {
   
   if (error) {
     console.error("Error deleting product:", error);
-    throw new Error('Gagal menghapus produk');
+    throw new Error(`Gagal menghapus produk: ${error.message}`);
   }
 };
 

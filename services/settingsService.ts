@@ -32,7 +32,7 @@ export const settingsService = {
 
     if (error) {
       console.error("Error saving settings:", error);
-      throw new Error('Gagal menyimpan pengaturan');
+      throw new Error(`Gagal menyimpan pengaturan: ${error.message}`);
     }
   },
 };

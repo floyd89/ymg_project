@@ -9,7 +9,7 @@ const getBanners = async (): Promise<Banner[]> => {
 
     if (error) {
         console.error("Error fetching banners:", error);
-        throw new Error('Tidak dapat mengambil data banner');
+        throw new Error(`Tidak dapat mengambil data banner: ${error.message}`);
     }
     return data || [];
 };
@@ -27,7 +27,7 @@ const saveBanners = async (banners: Banner[]): Promise<void> => {
 
     if (error) {
         console.error("Error saving banners:", error);
-        throw new Error('Gagal menyimpan banner');
+        throw new Error(`Gagal menyimpan banner: ${error.message}`);
     }
 };
 
