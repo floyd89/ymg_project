@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { Product, ProductVariant } from '../types';
 import { settingsService } from '../services/settingsService';
+import { formatCurrency } from '../utils/formatters';
 
 interface FloatingBottomNavProps {
   onHomeClick: () => void;
@@ -26,7 +27,7 @@ const FloatingBottomNav: React.FC<FloatingBottomNavProps> = ({ onHomeClick, onAb
     let message;
     if (activeProduct && activeVariant) {
       const priceToDisplay = activeVariant.price || activeProduct.price;
-      message = encodeURIComponent(`Halo YMG Official Store, saya tertarik dengan produk: ${activeProduct.name} (Warna: ${activeVariant.colorName}, Harga: ${priceToDisplay}). Apakah produk ini masih tersedia?`);
+      message = encodeURIComponent(`Halo YMG Official Store, saya tertarik dengan produk: ${activeProduct.name} (Warna: ${activeVariant.colorName}, Harga: ${formatCurrency(priceToDisplay)}). Apakah produk ini masih tersedia?`);
     } else {
       message = encodeURIComponent("Halo YMG Official Store, saya ingin bertanya mengenai koleksi tas Anda.");
     }
@@ -40,7 +41,7 @@ const FloatingBottomNav: React.FC<FloatingBottomNavProps> = ({ onHomeClick, onAb
         <div className="flex items-center p-3 gap-3">
           <div className="flex-grow">
             <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{activeVariant ? 'Harga' : 'Mulai dari'}</p>
-            <p className="text-xl font-black text-slate-900">{displayPrice}</p>
+            <p className="text-xl font-black text-slate-900">{formatCurrency(displayPrice)}</p>
           </div>
           <button
             onClick={handleWhatsAppClick}

@@ -5,6 +5,7 @@ import { productService } from '../../services/productService';
 import ProductEditor from '../../components/ProductEditor';
 import AdminNotice from '../../components/admin/AdminNotice';
 import { supabase } from '../../lib/supabaseClient';
+import { formatCurrency } from '../../utils/formatters';
 
 const ProductListView: React.FC = () => {
   const [products, setProducts] = useState<Product[]>([]);
@@ -158,7 +159,7 @@ const ProductListView: React.FC = () => {
                           {product.name}
                       </td>
                       <td className="px-6 py-4 text-slate-600">{product.category}</td>
-                      <td className="px-6 py-4 text-slate-600 font-bold">{product.price}</td>
+                      <td className="px-6 py-4 text-slate-600 font-bold">{formatCurrency(product.price)}</td>
                       <td className="px-6 py-4 text-right space-x-2">
                         <button onClick={() => handleEdit(product)} className="font-bold text-slate-600 hover:text-slate-900 text-xs">EDIT</button>
                         <button onClick={() => handleDelete(product.id)} className="font-bold text-red-500 hover:text-red-700 text-xs">HAPUS</button>

@@ -10,7 +10,8 @@ interface BannerProps {
 const Banner: React.FC<BannerProps> = ({ onExploreClick }) => {
   const [bannerItems, setBannerItems] = useState<BannerType[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
-  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+  // FIX: Replaced NodeJS.Timeout with ReturnType<typeof setTimeout> for browser compatibility.
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const touchStartX = useRef(0);
 
   useEffect(() => {

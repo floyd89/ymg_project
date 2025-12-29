@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { Product, ProductVariant } from '../types';
 import { settingsService } from '../services/settingsService';
+import { formatCurrency } from '../utils/formatters';
 
 interface FooterProps {
   product: Product | null;
@@ -23,7 +24,7 @@ const Footer: React.FC<FooterProps> = ({ product, variant }) => {
     if (!product || !variant || !whatsAppNumber) return;
 
     const priceToDisplay = variant.price || product.price;
-    const message = encodeURIComponent(`Halo YMG Official Store, saya tertarik dengan produk: ${product.name} (Warna: ${variant.colorName}, Harga: ${priceToDisplay}). Apakah produk ini masih tersedia?`);
+    const message = encodeURIComponent(`Halo YMG Official Store, saya tertarik dengan produk: ${product.name} (Warna: ${variant.colorName}, Harga: ${formatCurrency(priceToDisplay)}). Apakah produk ini masih tersedia?`);
     window.open(`https://wa.me/${whatsAppNumber}?text=${message}`, '_blank');
   };
 
@@ -36,7 +37,7 @@ const Footer: React.FC<FooterProps> = ({ product, variant }) => {
             <div className="flex items-center justify-end h-24 gap-6">
                 <div>
                     <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">{variant ? 'Harga Varian' : 'Harga'}</p>
-                    <p className="text-2xl font-black text-slate-900">{displayPrice}</p>
+                    <p className="text-2xl font-black text-slate-900">{formatCurrency(displayPrice)}</p>
                 </div>
                 <button
                     onClick={handleWhatsAppClick}

@@ -1,6 +1,7 @@
 
 import React from 'react';
 import { Product } from '../types';
+import { formatCurrency } from '../utils/formatters';
 
 interface ProductCardProps {
   product: Product;
@@ -30,7 +31,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onClick }) => {
           {product.shortDescription}
         </p>
         <div className="mt-auto">
-          <span className="text-xs md:text-lg font-black text-slate-900 tracking-tight">{product.price}</span>
+          <span className="text-xs md:text-lg font-black text-slate-900 tracking-tight">{formatCurrency(product.price)}</span>
         </div>
       </div>
     </button>

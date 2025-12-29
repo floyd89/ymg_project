@@ -1,6 +1,7 @@
 
 import React, { useEffect } from 'react';
 import { Product, ProductVariant } from '../types';
+import { formatCurrency } from '../utils/formatters';
 
 interface DetailViewProps {
   product: Product;
@@ -39,7 +40,7 @@ const DetailView: React.FC<DetailViewProps> = ({ product, selectedVariant, onVar
 
         <div className="md:col-span-5 lg:col-span-4 flex flex-col px-6 pt-10 pb-20 sm:px-12 sm:py-16">
           <h1 className="text-2xl md:text-4xl font-black text-slate-900 mb-2 leading-tight tracking-tighter">{product.name}</h1>
-          <div className="text-2xl md:text-3xl font-black text-slate-900 mb-6 tracking-tight">{displayPrice}</div>
+          <div className="text-2xl md:text-3xl font-black text-slate-900 mb-6 tracking-tight">{formatCurrency(displayPrice)}</div>
 
           <div className="mb-8">
             <h3 className="text-[10px] font-black text-slate-900 uppercase tracking-widest mb-4">
