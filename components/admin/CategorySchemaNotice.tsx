@@ -7,7 +7,7 @@ const CategorySchemaNotice: React.FC<{ onDismiss?: () => void }> = ({ onDismiss 
         <div>
             <p className="font-bold text-lg">⚠️ Aksi Diperlukan: Buat Tabel Kategori</p>
             <p className="text-sm mt-2 mb-4">
-              Fitur kategori memerlukan tabel <strong>categories</strong> di database Supabase Anda, tetapi tabel tersebut tidak ditemukan.
+              Fitur kategori memerlukan tabel <strong>categories</strong> di database Supabase Anda, tetapi tabel tersebut tidak ditemukan atau tidak dapat diakses.
             </p>
         </div>
         {onDismiss && (
@@ -33,21 +33,20 @@ CREATE TABLE IF NOT EXISTS public.categories (
 -- Mengaktifkan Row Level Security (RLS) pada tabel
 ALTER TABLE public.categories ENABLE ROW LEVEL SECURITY;
 
--- Memberi izin semua pengguna (termasuk anonim) untuk membaca kategori
--- Ini penting agar daftar kategori bisa ditampilkan di toko Anda.
-CREATE POLICY "Public categories are viewable by everyone"
-ON public.categories FOR SELECT
-USING (true);
+-- Menghapus policy lama jika ada untuk menghindari konflik
+DROP POLICY IF EXISTS "Public categories are viewable by everyone" ON public.categories;
+DROP POLICY IF EXISTS "Admin users can manage categories" ON public.categories;
+DROP POLICY IF EXISTS "Public access for admin" ON public.categories;
 
--- Memberi izin pengguna yang terautentikasi (admin) untuk melakukan semua aksi
--- Ini penting agar Anda bisa mengelola kategori dari panel admin.
-CREATE POLICY "Admin users can manage categories"
+-- Memberi izin penuh (SELECT, INSERT, UPDATE, DELETE) kepada pengguna anonim (kunci API publik).
+-- Ini sesuai untuk panel admin tanpa sistem login pengguna.
+CREATE POLICY "Public access for admin"
 ON public.categories FOR ALL
-USING (auth.role() = 'authenticated')
-WITH CHECK (auth.role() = 'authenticated');`}
+USING (true)
+WITH CHECK (true);`}
             </code>
           </pre>
-          <p className="text-[11px] mt-2">Setelah berhasil, refresh halaman ini.</p>
+          <p className="text-[11px] mt-2 font-bold">Setelah berhasil, refresh halaman ini. Masalah Anda akan teratasi.</p>
       </div>
     </div>
   </div>
