@@ -1,7 +1,6 @@
 
 import React, { useState } from 'react';
 import { authService } from '../../services/authService';
-import AuthSetupNotice from '../../components/admin/AuthSetupNotice';
 
 const LoginView: React.FC = () => {
   const [email, setEmail] = useState('');
@@ -73,7 +72,6 @@ const LoginView: React.FC = () => {
           </div>
         </form>
         
-        <AuthSetupNotice />
       </div>
     </div>
   );
