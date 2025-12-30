@@ -54,8 +54,23 @@ const getProducts = async (): Promise<Product[]> => {
     const finalUrls = sanitizedImageUrls(p.imageUrls).map(buildFullUrl).filter(Boolean);
 
     const getCategoriesArray = (category: any): string[] => {
-        if (Array.isArray(category)) return category;
-        if (typeof category === 'string' && category.length > 0) return [category];
+        if (Array.isArray(category)) {
+            return category;
+        }
+        if (typeof category === 'string') {
+            // Menangani format string array dari PostgreSQL, cth: "{Cat A,"Cat B"}"
+            if (category.startsWith('{') && category.endsWith('}')) {
+                const content = category.substring(1, category.length - 1);
+                if (content === '') return []; // Menangani array kosong "{}"
+                // Pisahkan berdasarkan koma, lalu bersihkan spasi dan tanda kutip
+                return content.split(',').map(c => c.trim().replace(/"/g, ''));
+            }
+            // Menangani string kategori tunggal
+            if (category.length > 0) {
+                return [category];
+            }
+        }
+        // Kembalikan array kosong untuk null, undefined, dll.
         return [];
     }
 
