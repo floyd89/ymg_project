@@ -7,9 +7,11 @@ interface NavbarProps {
   onGoAbout: () => void;
   onGoToCart: () => void;
   cartItemCount: number;
+  storeLogoUrl?: string | null;
+  storeName?: string | null;
 }
 
-const Navbar: React.FC<NavbarProps> = ({ onGoHome, onGoProducts, onGoAbout, onGoToCart, cartItemCount }) => {
+const Navbar: React.FC<NavbarProps> = ({ onGoHome, onGoProducts, onGoAbout, onGoToCart, cartItemCount, storeLogoUrl, storeName }) => {
   return (
     <nav className="sticky top-0 z-40 bg-white/90 backdrop-blur-md border-b border-slate-100 shadow-sm hidden md:flex">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
@@ -17,10 +19,14 @@ const Navbar: React.FC<NavbarProps> = ({ onGoHome, onGoProducts, onGoAbout, onGo
           {/* Left Section - Logo & Links */}
           <div className="flex items-center gap-8">
             <button onClick={onGoHome} className="flex items-center group select-none">
-              <div className="flex items-baseline">
-                <span className="text-2xl font-black text-slate-900 tracking-tighter">YMG</span>
-                <span className="ml-2.5 text-xs font-bold text-slate-400 uppercase tracking-widest group-hover:text-slate-900 transition-colors">Official Store</span>
-              </div>
+              {storeLogoUrl ? (
+                <img src={storeLogoUrl} alt={storeName || 'YMG Store Logo'} className="h-12 w-auto" />
+              ) : (
+                <div className="flex items-baseline">
+                  <span className="text-2xl font-black text-slate-900 tracking-tighter">YMG</span>
+                  <span className="ml-2.5 text-xs font-bold text-slate-400 uppercase tracking-widest group-hover:text-slate-900 transition-colors">Official Store</span>
+                </div>
+              )}
             </button>
             <div className="flex items-center gap-8 text-xs font-bold text-slate-400 border-l border-slate-200 ml-4 pl-8">
               <button onClick={onGoProducts} className="hover:text-slate-900 transition-colors uppercase tracking-widest">

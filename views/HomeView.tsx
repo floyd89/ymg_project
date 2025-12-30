@@ -12,9 +12,11 @@ interface HomeViewProps {
   onSelectCategory: (categoryName: string) => void;
   onProductClick: (id: string) => void;
   onGoProducts: () => void;
+  storeLogoUrl?: string | null;
+  storeName?: string | null;
 }
 
-const HomeView: React.FC<HomeViewProps> = ({ products, categories, selectedCategory, onSelectCategory, onProductClick, onGoProducts }) => {
+const HomeView: React.FC<HomeViewProps> = ({ products, categories, selectedCategory, onSelectCategory, onProductClick, onGoProducts, storeLogoUrl, storeName }) => {
   const [searchTerm, setSearchTerm] = useState('');
 
   const filteredProducts = useMemo(() => {
@@ -32,11 +34,15 @@ const HomeView: React.FC<HomeViewProps> = ({ products, categories, selectedCateg
   return (
     <div className="space-y-8 md:space-y-12 py-6 md:py-10">
       {/* Mobile Header */}
-      <header className="md:hidden text-center px-4">
-        <div className="flex items-baseline justify-center select-none">
-          <span className="text-2xl font-black text-slate-900 tracking-tighter">YMG</span>
-          <span className="ml-2.5 text-xs font-bold text-slate-400 uppercase tracking-widest">Official Store</span>
-        </div>
+      <header className="md:hidden text-center px-4 flex justify-center">
+        {storeLogoUrl ? (
+          <img src={storeLogoUrl} alt={storeName || 'YMG Store Logo'} className="h-16 w-auto" />
+        ) : (
+          <div className="flex items-baseline justify-center select-none">
+            <span className="text-2xl font-black text-slate-900 tracking-tighter">YMG</span>
+            <span className="ml-2.5 text-xs font-bold text-slate-400 uppercase tracking-widest">Official Store</span>
+          </div>
+        )}
       </header>
       
       {/* Search Bar Section */}

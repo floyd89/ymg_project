@@ -223,18 +223,18 @@ const App: React.FC = () => {
     if (error) return <div className="flex-grow flex items-center justify-center min-h-[50vh]"><p className="text-red-500 font-bold bg-red-50 p-4 rounded-lg">{error}</p></div>;
 
     switch (currentView) {
-      case 'home': return <HomeView products={products} categories={categories} selectedCategory={selectedCategory} onSelectCategory={setSelectedCategory} onProductClick={handleProductClick} onGoProducts={navigateToProductsSection} />;
+      case 'home': return <HomeView products={products} categories={categories} selectedCategory={selectedCategory} onSelectCategory={setSelectedCategory} onProductClick={handleProductClick} onGoProducts={navigateToProductsSection} storeLogoUrl={settings?.storeLogoUrl} storeName={settings?.storeName} />;
       case 'detail': return selectedProduct && <DetailView product={selectedProduct} selectedVariant={selectedVariant} onVariantChange={setSelectedVariant} selectedSize={selectedSize} onSizeChange={setSelectedSize} onBack={handleBackNavigation} onAddToCart={handleAddToCart} onBuyNow={handleBuyNow} />;
       case 'about': return <AboutView onBack={handleBackNavigation} />;
       case 'cart': return <CartView cart={cart} onUpdateQuantity={handleUpdateCartQuantity} onRemoveItem={handleRemoveFromCart} onBack={handleBackNavigation} onCheckout={navigateToCheckout} />;
       case 'checkout': return settings && <CheckoutView cart={cart} onBack={() => navigateTo('cart')} storeWhatsAppNumber={settings.whatsAppNumber} />;
-      default: return <HomeView products={products} categories={categories} selectedCategory={selectedCategory} onSelectCategory={setSelectedCategory} onProductClick={handleProductClick} onGoProducts={navigateToProductsSection} />;
+      default: return <HomeView products={products} categories={categories} selectedCategory={selectedCategory} onSelectCategory={setSelectedCategory} onProductClick={handleProductClick} onGoProducts={navigateToProductsSection} storeLogoUrl={settings?.storeLogoUrl} storeName={settings?.storeName} />;
     }
   };
 
   return (
     <div className="min-h-screen flex flex-col bg-white">
-      <Navbar onGoHome={navigateToHome} onGoProducts={navigateToProductsSection} onGoAbout={navigateToAbout} onGoToCart={navigateToCart} cartItemCount={cartItemCount} />
+      <Navbar onGoHome={navigateToHome} onGoProducts={navigateToProductsSection} onGoAbout={navigateToAbout} onGoToCart={navigateToCart} cartItemCount={cartItemCount} storeLogoUrl={settings?.storeLogoUrl} storeName={settings?.storeName} />
       <main key={currentView} className="flex-grow animate-view-enter pb-24 md:pb-0">
         {renderContent()}
       </main>
@@ -243,14 +243,14 @@ const App: React.FC = () => {
         onAboutClick={navigateToAbout}
         onAddToCart={() => {
           if (selectedProduct) {
-            const variant = selectedVariant || {id: 'default', colorName: 'Default', imageUrl: ''};
+            const variant = selectedVariant || {id: 'default', colorName: 'Default', imageUrl: '', isAvailable: true};
             handleAddToCart(selectedProduct, variant, 1, selectedSize);
             alert(`${selectedProduct.name} (${variant.colorName} - ${selectedSize || 'N/A'}) telah ditambahkan ke keranjang.`);
           }
         }}
         onBuyNow={() => {
           if (selectedProduct) {
-             const variant = selectedVariant || {id: 'default', colorName: 'Default', imageUrl: ''};
+             const variant = selectedVariant || {id: 'default', colorName: 'Default', imageUrl: '', isAvailable: true};
             handleBuyNow(selectedProduct, variant, 1, selectedSize);
           }
         }}
