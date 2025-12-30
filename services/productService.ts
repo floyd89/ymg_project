@@ -116,16 +116,62 @@ const saveProduct = async (productToSave: Product): Promise<Product> => {
 };
 
 const deleteProduct = async (productId: string): Promise<void> => {
-  const { error } = await supabase
+  // 1. Ambil data produk untuk mendapatkan path gambar
+  const { data: productData, error: fetchError } = await supabase
+    .from('products')
+    .select('imageUrls, variants')
+    .eq('id', productId)
+    .single();
+
+  // Jika produk tidak ditemukan (misalnya sudah dihapus), hentikan proses tanpa error.
+  if (fetchError && fetchError.code === 'PGRST116') {
+    console.warn(`Produk dengan ID ${productId} tidak ditemukan, mungkin sudah dihapus.`);
+    return;
+  }
+  
+  if (fetchError) {
+    console.error("Error fetching product for deletion:", fetchError);
+    throw new Error(`Gagal mengambil data produk untuk dihapus: ${fetchError.message}`);
+  }
+
+  // 2. Kumpulkan semua path gambar yang terkait dengan produk
+  const imagePathsToDelete: string[] = [];
+  if (productData?.imageUrls && Array.isArray(productData.imageUrls)) {
+    imagePathsToDelete.push(...productData.imageUrls.filter(p => p));
+  }
+  if (productData?.variants && Array.isArray(productData.variants)) {
+    productData.variants.forEach((variant: any) => {
+      if (variant.imageUrl) {
+        imagePathsToDelete.push(variant.imageUrl);
+      }
+    });
+  }
+
+  // 3. Hapus gambar dari Supabase Storage jika ada
+  if (imagePathsToDelete.length > 0) {
+    const { error: storageError } = await supabase.storage
+      .from('store-images')
+      .remove(imagePathsToDelete);
+    
+    if (storageError) {
+      // Catat error tapi jangan hentikan proses.
+      // Lebih baik menghapus record database daripada meninggalkan produk "zombie".
+      console.error(`Gagal menghapus beberapa gambar dari storage untuk produk ${productId}. Lanjutkan menghapus record database.`, storageError);
+    }
+  }
+
+  // 4. Hapus record produk dari database
+  const { error: deleteError } = await supabase
     .from('products')
     .delete()
     .eq('id', productId);
   
-  if (error) {
-    console.error("Error deleting product:", error);
-    throw new Error(`Gagal menghapus produk: ${error.message}`);
+  if (deleteError) {
+    console.error("Error deleting product record:", deleteError);
+    throw new Error(`Gagal menghapus produk: ${deleteError.message}`);
   }
 };
+
 
 const updateProductStatus = async (productId: string, isActive: boolean): Promise<void> => {
   const { error } = await supabase
