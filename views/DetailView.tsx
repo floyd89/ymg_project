@@ -16,16 +16,26 @@ const DetailView: React.FC<DetailViewProps> = ({ product, selectedVariant, onVar
   const [activeImageUrl, setActiveImageUrl] = useState<string | null>(null);
   const [quantity, setQuantity] = useState(1);
 
+  // Efek untuk inisialisasi dan reset saat produk berubah
   useEffect(() => {
     window.scrollTo(0, 0);
-    if (product.imageUrls && product.imageUrls.length > 0) {
+    // Pilih varian pertama secara default jika ada dan belum ada yang dipilih
+    if (product.variants.length > 0 && !selectedVariant) {
+      onVariantChange(product.variants[0]);
+    } else if (selectedVariant?.imageUrl) {
+       setActiveImageUrl(selectedVariant.imageUrl);
+    } else if (product.imageUrls && product.imageUrls.length > 0) {
       setActiveImageUrl(product.imageUrls[0]);
     }
-    if (!selectedVariant && product.variants.length > 0) {
-      onVariantChange(product.variants[0]);
+    setQuantity(1); // Reset kuantitas saat produk berubah
+  }, [product.id]);
+
+  // Efek untuk mengubah gambar utama saat varian berubah
+  useEffect(() => {
+    if (selectedVariant?.imageUrl) {
+      setActiveImageUrl(selectedVariant.imageUrl);
     }
-    setQuantity(1); // Reset quantity when product changes
-  }, [product, selectedVariant, onVariantChange]);
+  }, [selectedVariant]);
 
   const displayPrice = useMemo(() => selectedVariant?.price || product.price, [selectedVariant, product.price]);
   const hasVariants = product.variants.length > 0;
@@ -37,7 +47,7 @@ const DetailView: React.FC<DetailViewProps> = ({ product, selectedVariant, onVar
       onAddToCart(product, selectedVariant, quantity);
       alert(`${quantity} x ${product.name} (${selectedVariant.colorName}) telah ditambahkan ke keranjang.`);
     } else if (isReadyToBuy && !hasVariants) {
-      const dummyVariant = { id: 'default', colorName: 'Default', colorHex: '' };
+      const dummyVariant = { id: 'default', colorName: 'Default', imageUrl: '' };
       onAddToCart(product, dummyVariant, quantity);
       alert(`${quantity} x ${product.name} telah ditambahkan ke keranjang.`);
     }
@@ -47,7 +57,7 @@ const DetailView: React.FC<DetailViewProps> = ({ product, selectedVariant, onVar
     if (isReadyToBuy && selectedVariant) {
       onBuyNow(product, selectedVariant, quantity);
     } else if (isReadyToBuy && !hasVariants) {
-      const dummyVariant = { id: 'default', colorName: 'Default', colorHex: '' };
+      const dummyVariant = { id: 'default', colorName: 'Default', imageUrl: '' };
       onBuyNow(product, dummyVariant, quantity);
     }
   };
@@ -92,13 +102,20 @@ const DetailView: React.FC<DetailViewProps> = ({ product, selectedVariant, onVar
           {hasVariants && (
             <div className="mb-8">
               <h3 className="text-[10px] font-black text-slate-900 uppercase tracking-widest mb-4">
-                Varian Warna {selectedVariant?.price && <span className="text-slate-400">(Harga mungkin berbeda)</span>}
+                Pilih Varian {selectedVariant?.price && <span className="text-slate-400">(Harga mungkin berbeda)</span>}
               </h3>
-              <div className="flex flex-wrap items-center gap-3">
+              <div className="flex flex-wrap items-start gap-4">
                 {product.variants.map(variant => (
-                  <button key={variant.id} onClick={() => onVariantChange(variant)} className={`flex items-center gap-3 pl-2 pr-4 py-2 rounded-full border-2 transition-all duration-300 text-xs font-bold ${selectedVariant?.id === variant.id ? 'bg-slate-900 text-white border-slate-900' : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100 hover:border-slate-300'}`} aria-label={`Pilih warna ${variant.colorName}`}>
-                    <span className={`w-5 h-5 rounded-full block ${selectedVariant?.id === variant.id ? 'ring-2 ring-white/60' : ''}`} style={{ backgroundColor: variant.colorHex }} />
-                    <span>{variant.colorName}</span>
+                  <button 
+                    key={variant.id} 
+                    onClick={() => onVariantChange(variant)}
+                    className="text-center group"
+                    aria-label={`Pilih varian ${variant.colorName}`}
+                  >
+                      <div className={`w-20 h-20 rounded-lg overflow-hidden border-2 transition-all group-hover:border-slate-400 ${selectedVariant?.id === variant.id ? 'border-slate-900' : 'border-slate-200'}`}>
+                          <img src={variant.imageUrl} alt={variant.colorName} className="w-full h-full object-cover"/>
+                      </div>
+                      <span className={`mt-2 text-xs font-bold block transition-colors ${selectedVariant?.id === variant.id ? 'text-slate-900' : 'text-slate-500 group-hover:text-slate-800'}`}>{variant.colorName}</span>
                   </button>
                 ))}
               </div>

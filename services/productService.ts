@@ -16,7 +16,6 @@ const getProducts = async (): Promise<Product[]> => {
   const supabaseUrlString = import.meta.env.VITE_SUPABASE_URL;
   if (!supabaseUrlString) {
       console.error("VITE_SUPABASE_URL tidak ditemukan.");
-      // Jika URL Supabase tidak ada, kembalikan data apa adanya setelah sanitasi dasar
       return (data || []).map(p => ({
         ...p,
         variants: p.variants || [],
@@ -26,8 +25,24 @@ const getProducts = async (): Promise<Product[]> => {
         category: Array.isArray(p.category) ? p.category : [],
       }));
   }
-  const correctHostname = new URL(supabaseUrlString).hostname;
   const BUCKET_NAME = 'store-images';
+
+  const buildFullUrl = (url: string | null | undefined): string => {
+      if (!url) return '';
+      if (url.startsWith('http')) {
+          try {
+              const imageUrlObject = new URL(url);
+              // Opsi: Anda bisa menambahkan validasi hostname di sini jika perlu
+              return url;
+          } catch (e) {
+              console.warn(`URL gambar tidak valid: ${url}`);
+              return '';
+          }
+      } else {
+          const cleanPath = url.startsWith('/') ? url.substring(1) : url;
+          return `${supabaseUrlString}/storage/v1/object/public/${BUCKET_NAME}/${cleanPath}`;
+      }
+  };
 
   return (data || []).map(p => {
     const sanitizedImageUrls = (value: any): string[] => {
@@ -35,44 +50,24 @@ const getProducts = async (): Promise<Product[]> => {
       if (typeof value === 'string') return [value]; 
       return [];
     };
-
-    const initialUrls = sanitizedImageUrls(p.imageUrls);
-
-    const finalUrls = initialUrls.map(url => {
-        if (!url) return '';
-        if (url.startsWith('http')) {
-            try {
-                const imageUrlObject = new URL(url);
-                if (imageUrlObject.hostname !== correctHostname) {
-                    imageUrlObject.hostname = correctHostname;
-                    return imageUrlObject.toString();
-                }
-                return url;
-            } catch (e) {
-                console.warn(`URL gambar tidak valid: ${url}`);
-                return '';
-            }
-        } else {
-            const cleanPath = url.startsWith('/') ? url.substring(1) : url;
-            return `${supabaseUrlString}/storage/v1/object/public/${BUCKET_NAME}/${cleanPath}`;
-        }
-    }).filter(Boolean); 
+    
+    const finalUrls = sanitizedImageUrls(p.imageUrls).map(buildFullUrl).filter(Boolean);
 
     const getCategoriesArray = (category: any): string[] => {
-        if (Array.isArray(category)) {
-            return category;
-        }
-        if (typeof category === 'string' && category.length > 0) {
-            // Ini menangani kasus jika kolom DB masih berupa `text`
-            return [category];
-        }
+        if (Array.isArray(category)) return category;
+        if (typeof category === 'string' && category.length > 0) return [category];
         return [];
     }
+
+    const processedVariants = (p.variants || []).map((v: any) => ({
+      ...v,
+      imageUrl: buildFullUrl(v.imageUrl),
+    }));
 
     return {
       ...p,
       category: getCategoriesArray(p.category),
-      variants: p.variants || [],
+      variants: processedVariants,
       highlights: p.highlights || [],
       imageUrls: finalUrls,
       isActive: p.isActive === null || p.isActive === undefined ? true : p.isActive,

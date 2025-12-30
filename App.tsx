@@ -232,7 +232,8 @@ const App: React.FC = () => {
             handleAddToCart(selectedProduct, selectedVariant, 1);
             alert(`${selectedProduct.name} (${selectedVariant.colorName}) telah ditambahkan ke keranjang.`);
           } else if (selectedProduct && !selectedProduct.variants.length) {
-            handleAddToCart(selectedProduct, {id: 'default', colorName: 'Default', colorHex: ''}, 1);
+            // FIX: Replaced non-existent `colorHex` with `imageUrl` to match ProductVariant type.
+            handleAddToCart(selectedProduct, {id: 'default', colorName: 'Default', imageUrl: ''}, 1);
             alert(`${selectedProduct.name} telah ditambahkan ke keranjang.`);
           }
         }}
@@ -240,7 +241,8 @@ const App: React.FC = () => {
           if (selectedProduct && selectedVariant) {
             handleBuyNow(selectedProduct, selectedVariant, 1);
           } else if (selectedProduct && !selectedProduct.variants.length) {
-            handleBuyNow(selectedProduct, {id: 'default', colorName: 'Default', colorHex: ''}, 1);
+            // FIX: Replaced non-existent `colorHex` with `imageUrl` to match ProductVariant type.
+            handleBuyNow(selectedProduct, {id: 'default', colorName: 'Default', imageUrl: ''}, 1);
           }
         }}
         onGoToCart={navigateToCart}

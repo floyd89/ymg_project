@@ -48,18 +48,14 @@ const ProductEditor: React.FC<ProductEditorProps> = ({ product, categories, onSa
     const currentImageCount = productData.imageUrls.length + Object.keys(imagePreviews).length;
     const availableSlots = 6 - currentImageCount;
     if (availableSlots <= 0) {
-        alert("Maksimal 6 foto.");
+        alert("Maksimal 6 foto produk utama.");
         return;
     }
     const filesToUpload = Array.from(files).slice(0, availableSlots);
 
     filesToUpload.forEach(file => {
         const tempId = `preview-${file.name}-${Date.now()}`;
-
-        fileToBase64(file).then(base64 => {
-            setImagePreviews(prev => ({ ...prev, [tempId]: base64 }));
-        });
-        
+        fileToBase64(file).then(base64 => setImagePreviews(prev => ({ ...prev, [tempId]: base64 })));
         setIsUploading(prev => ({ ...prev, [tempId]: true }));
         uploadImage(file)
             .then(filePath => {
@@ -71,18 +67,38 @@ const ProductEditor: React.FC<ProductEditorProps> = ({ product, categories, onSa
                 else alert(error.message || `Gagal mengunggah ${file.name}.`);
             })
             .finally(() => {
-                setImagePreviews(prev => {
-                    const newPreviews = { ...prev };
-                    delete newPreviews[tempId];
-                    return newPreviews;
-                });
-                setIsUploading(prev => {
-                    const newUp = { ...prev };
-                    delete newUp[tempId];
-                    return newUp;
-                });
+                setImagePreviews(prev => { const newPreviews = { ...prev }; delete newPreviews[tempId]; return newPreviews; });
+                setIsUploading(prev => { const newUp = { ...prev }; delete newUp[tempId]; return newUp; });
             });
     });
+  };
+
+  const handleVariantImageUpload = async (index: number, file: File | null) => {
+    if (!file) return;
+    const uploadKey = `variant-${index}`;
+    setIsUploading(prev => ({ ...prev, [uploadKey]: true }));
+    try {
+      const filePath = await uploadImage(file);
+      setProductData(prev => {
+        if (!prev) return null;
+        const newVariants = [...prev.variants];
+        newVariants[index].imageUrl = filePath;
+        return { ...prev, variants: newVariants };
+      });
+      setUploadError(null);
+    } catch (error) {
+      if (error instanceof Error && error.message.includes('Bucket not found')) {
+          setUploadError('BUCKET_NOT_FOUND');
+      } else {
+          alert(error.message || `Gagal mengunggah gambar varian.`);
+      }
+    } finally {
+      setIsUploading(prev => {
+          const newUp = { ...prev };
+          delete newUp[uploadKey];
+          return newUp;
+      });
+    }
   };
   
   const removeImage = (index: number) => setProductData(prev => prev ? { ...prev, imageUrls: prev.imageUrls.filter((_, i) => i !== index) } : null);
@@ -112,11 +128,11 @@ const ProductEditor: React.FC<ProductEditorProps> = ({ product, categories, onSa
     setProductData(prev => {
       if (!prev) return null;
       const newVariants = [...prev.variants];
-      newVariants[index] = { ...newVariants[index], [name]: value };
+      (newVariants[index] as any)[name] = value;
       return { ...prev, variants: newVariants };
     });
   };
-  const addVariant = () => setProductData(prev => prev ? { ...prev, variants: [...prev.variants, { id: `variant-${Date.now()}`, colorName: '', colorHex: '#000000', price: '' }] } : null);
+  const addVariant = () => setProductData(prev => prev ? { ...prev, variants: [...prev.variants, { id: `variant-${Date.now()}`, colorName: '', imageUrl: '', price: '' }] } : null);
   const removeVariant = (index: number) => setProductData(prev => prev ? { ...prev, variants: prev.variants.filter((_, i) => i !== index) } : null);
   const handleDragStart = (index: number) => setDraggedIndex(index);
   const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => e.preventDefault();
@@ -132,7 +148,11 @@ const ProductEditor: React.FC<ProductEditorProps> = ({ product, categories, onSa
     e.preventDefault();
     if (productData) {
       if (productData.imageUrls.length === 0) {
-        alert("Unggah setidaknya satu foto.");
+        alert("Unggah setidaknya satu foto produk utama.");
+        return;
+      }
+      if (productData.variants.some(v => !v.imageUrl)) {
+        alert("Harap unggah gambar untuk setiap varian.");
         return;
       }
       if (!productData.category || productData.category.length === 0) {
@@ -173,7 +193,8 @@ const ProductEditor: React.FC<ProductEditorProps> = ({ product, categories, onSa
             </div>
           </div>
           <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
-            <h3 className="font-bold text-slate-800 mb-4">Foto Produk</h3>
+            <h3 className="font-bold text-slate-800 mb-4">Foto Produk Utama</h3>
+             <p className="text-xs text-slate-400 mb-2">Foto-foto ini akan menjadi galeri utama. Foto varian diatur di bawah.</p>
             <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-3">
               {productData.imageUrls.map((url, index) => (
                 <div key={url+index} className="relative aspect-square group rounded-lg overflow-hidden border-2" draggable onDragStart={() => handleDragStart(index)} onDragOver={handleDragOver} onDrop={() => handleDrop(index)}>
@@ -199,11 +220,21 @@ const ProductEditor: React.FC<ProductEditorProps> = ({ product, categories, onSa
             <h3 className="font-bold text-slate-800 mb-4">Varian Produk</h3>
             <div className="space-y-3">
               {productData.variants.map((variant, index) => (
-                <div key={variant.id} className="flex gap-3 items-center p-3 bg-slate-50 rounded-lg border">
-                    <input type="color" name="colorHex" value={variant.colorHex} onChange={e => handleVariantChange(index, e)} className="h-10 w-10 p-0 border-none rounded cursor-pointer bg-transparent" style={{'WebkitAppearance': 'none', 'MozAppearance': 'none', appearance: 'none'}} />
-                    <input type="text" name="colorName" value={variant.colorName} onChange={e => handleVariantChange(index, e)} placeholder="Nama Warna" required className="flex-1 p-2 rounded-md border-slate-300 font-medium text-sm" />
-                    <input type="text" name="price" value={variant.price} onChange={e => handleVariantChange(index, e)} placeholder="Harga Varian (opsional)" className="w-40 p-2 rounded-md border-slate-300 font-medium text-sm" />
-                    <button type="button" onClick={() => removeVariant(index)} className="text-red-500 hover:text-red-700 text-xs font-bold">HAPUS</button>
+                <div key={variant.id} className="flex gap-4 items-center p-3 bg-slate-50 rounded-lg border">
+                    <div className="flex-shrink-0 w-16 h-16 bg-slate-200 rounded-md flex items-center justify-center relative">
+                        {variant.imageUrl ? (
+                            <img src={getDisplayUrl(variant.imageUrl)} className="w-full h-full object-cover rounded-md" alt={`Varian ${variant.colorName}`} />
+                        ) : (
+                            <svg className="w-8 h-8 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                        )}
+                        <input type="file" accept="image/*" className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" onChange={e => handleVariantImageUpload(index, e.target.files?.[0] ?? null)} />
+                        {isUploading[`variant-${index}`] && <div className="absolute inset-0 bg-black/50 flex items-center justify-center rounded-md"><div className="w-6 h-6 border-2 border-white/50 border-t-white rounded-full animate-spin"></div></div>}
+                    </div>
+                    <div className="flex-grow space-y-2">
+                        <input type="text" name="colorName" value={variant.colorName} onChange={e => handleVariantChange(index, e)} placeholder="Nama Varian (cth: Merah)" required className="w-full p-2 rounded-md border-slate-300 font-medium text-sm" />
+                        <input type="text" name="price" value={variant.price} onChange={e => handleVariantChange(index, e)} placeholder="Harga Varian (opsional)" className="w-full p-2 rounded-md border-slate-300 font-medium text-sm" />
+                    </div>
+                    <button type="button" onClick={() => removeVariant(index)} className="text-red-500 hover:text-red-700 text-xs font-bold self-start">HAPUS</button>
                 </div>
               ))}
             </div>
@@ -216,6 +247,7 @@ const ProductEditor: React.FC<ProductEditorProps> = ({ product, categories, onSa
                 <div className="space-y-4">
                     <div>
                         <label className="text-xs font-bold text-slate-500">Harga Utama</label>
+                         <p className="text-xs text-slate-400 mb-1">Harga ini akan digunakan jika varian tidak memiliki harga spesifik.</p>
                         <input type="text" name="price" value={productData.price} onChange={handleChange} placeholder="cth: 64000" required className="w-full p-3 mt-1 bg-slate-50 rounded-lg border border-slate-200 font-bold"/>
                     </div>
                     <div>
