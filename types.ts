@@ -7,7 +7,7 @@ export interface ProductVariant {
 }
 
 export interface Product {
-  id: string;
+  id:string;
   name: string;
   category: string[];
   price: string;
@@ -16,6 +16,7 @@ export interface Product {
   imageUrls: string[]; 
   variants: ProductVariant[];
   size?: string; // Opsional, untuk dimensi seperti PxLxT
+  availableSizes?: string[]; // Opsional, untuk pilihan ukuran seperti S, M, L
   isActive: boolean;
 }
 
@@ -40,10 +41,11 @@ export interface AppSettings {
 export type View = 'home' | 'detail' | 'about' | 'checkout' | 'cart';
 
 export interface CartItem {
-  id: string; // Composite key: `${productId}-${variantId}`
+  id: string; // Composite key: `${productId}-${variantId}-${size}`
   product: Product;
   variant: ProductVariant;
   quantity: number;
+  size: string; // Ukuran yang dipilih, wajib ada
 }
 
 // Tipe data baru untuk manajemen kategori

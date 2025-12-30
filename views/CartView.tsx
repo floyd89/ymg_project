@@ -49,10 +49,10 @@ const CartView: React.FC<CartViewProps> = ({ cart, onUpdateQuantity, onRemoveIte
                const itemPrice = parseInt((item.variant.price || item.product.price).replace(/\D/g, ''), 10) || 0;
                return (
                 <div key={item.id} className="bg-white border border-slate-100 rounded-2xl p-4 flex items-start gap-4 shadow-sm">
-                  <img src={item.product.imageUrls?.[0]} alt={item.product.name} className="w-24 h-24 rounded-lg object-cover bg-slate-100" />
+                  <img src={item.variant.imageUrl || item.product.imageUrls?.[0]} alt={item.product.name} className="w-24 h-24 rounded-lg object-cover bg-slate-100" />
                   <div className="flex-grow">
                     <h3 className="font-bold text-slate-800 text-sm md:text-base">{item.product.name}</h3>
-                    <p className="text-xs text-slate-500">Varian: {item.variant.colorName}</p>
+                    <p className="text-xs text-slate-500">Varian: {item.variant.colorName} / Ukuran: {item.size}</p>
                     <p className="text-sm font-bold text-slate-900 mt-1">{formatCurrency(String(itemPrice))}</p>
                     <div className="flex items-center gap-3 mt-3">
                       <button onClick={() => onUpdateQuantity(item.id, item.quantity - 1)} className="w-7 h-7 bg-slate-100 rounded-full font-bold text-slate-600">-</button>

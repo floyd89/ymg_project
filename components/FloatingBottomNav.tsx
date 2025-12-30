@@ -10,12 +10,14 @@ interface FloatingBottomNavProps {
   onBuyNow: () => void;
   onGoToCart: () => void;
   onSelectVariantClick: () => void;
+  onSelectSizeClick: () => void;
   cartItemCount: number;
   activeProduct: Product | null;
   activeVariant: ProductVariant | null;
+  activeSize: string | null;
 }
 
-const FloatingBottomNav: React.FC<FloatingBottomNavProps> = ({ onHomeClick, onAboutClick, onAddToCart, onBuyNow, onGoToCart, onSelectVariantClick, cartItemCount, activeProduct, activeVariant }) => {
+const FloatingBottomNav: React.FC<FloatingBottomNavProps> = ({ onHomeClick, onAboutClick, onAddToCart, onBuyNow, onGoToCart, onSelectVariantClick, onSelectSizeClick, cartItemCount, activeProduct, activeVariant, activeSize }) => {
   const [whatsAppNumber, setWhatsAppNumber] = useState('');
 
   useEffect(() => {
@@ -34,18 +36,27 @@ const FloatingBottomNav: React.FC<FloatingBottomNavProps> = ({ onHomeClick, onAb
 
 
   if (activeProduct) {
-    const hasVariants = activeProduct.variants.length > 0;
-    const isReadyToBuy = !hasVariants || !!activeVariant;
+    const hasVariants = activeProduct.variants && activeProduct.variants.length > 0;
+    const hasSizes = activeProduct.availableSizes && activeProduct.availableSizes.length > 0;
 
-    if (hasVariants && !isReadyToBuy) {
+    if (hasVariants && !activeVariant) {
       return (
         <div className="fixed bottom-0 left-0 w-full z-50 md:hidden bg-white/95 backdrop-blur-xl border-t border-slate-100 shadow-[0_-5px_30px_rgba(0,0,0,0.05)]">
           <div className="p-3">
-            <button
-              onClick={onSelectVariantClick}
-              className="w-full h-14 bg-slate-900 text-white rounded-2xl text-sm font-bold uppercase tracking-widest hover:bg-slate-800 transition-colors transform active:scale-95 shadow-lg shadow-slate-400/50 flex items-center justify-center"
-            >
+            <button onClick={onSelectVariantClick} className="w-full h-14 bg-slate-900 text-white rounded-2xl text-sm font-bold uppercase tracking-widest hover:bg-slate-800 transition-colors transform active:scale-95 shadow-lg shadow-slate-400/50 flex items-center justify-center">
               Pilih Varian
+            </button>
+          </div>
+        </div>
+      );
+    }
+
+    if (hasSizes && !activeSize) {
+      return (
+        <div className="fixed bottom-0 left-0 w-full z-50 md:hidden bg-white/95 backdrop-blur-xl border-t border-slate-100 shadow-[0_-5px_30px_rgba(0,0,0,0.05)]">
+          <div className="p-3">
+            <button onClick={onSelectSizeClick} className="w-full h-14 bg-slate-900 text-white rounded-2xl text-sm font-bold uppercase tracking-widest hover:bg-slate-800 transition-colors transform active:scale-95 shadow-lg shadow-slate-400/50 flex items-center justify-center">
+              Pilih Ukuran
             </button>
           </div>
         </div>
@@ -55,17 +66,10 @@ const FloatingBottomNav: React.FC<FloatingBottomNavProps> = ({ onHomeClick, onAb
     return (
       <div className="fixed bottom-0 left-0 w-full z-50 md:hidden bg-white/95 backdrop-blur-xl border-t border-slate-100 shadow-[0_-5px_30px_rgba(0,0,0,0.05)]">
         <div className="flex items-center p-3 gap-3">
-          <button
-            onClick={onAddToCart}
-            aria-label="Tambah ke Keranjang"
-            className="flex-shrink-0 w-14 h-14 bg-slate-100 text-slate-900 rounded-2xl hover:bg-slate-200 transition-colors transform active:scale-95 flex items-center justify-center"
-          >
+          <button onClick={onAddToCart} aria-label="Tambah ke Keranjang" className="flex-shrink-0 w-14 h-14 bg-slate-100 text-slate-900 rounded-2xl hover:bg-slate-200 transition-colors transform active:scale-95 flex items-center justify-center">
              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" /></svg>
           </button>
-          <button
-            onClick={onBuyNow}
-            className="w-full h-14 bg-slate-900 text-white rounded-2xl text-sm font-bold uppercase tracking-widest hover:bg-slate-800 transition-colors transform active:scale-95 shadow-lg shadow-slate-400/50 flex items-center justify-center"
-          >
+          <button onClick={onBuyNow} className="w-full h-14 bg-slate-900 text-white rounded-2xl text-sm font-bold uppercase tracking-widest hover:bg-slate-800 transition-colors transform active:scale-95 shadow-lg shadow-slate-400/50 flex items-center justify-center">
             Beli Sekarang
           </button>
         </div>

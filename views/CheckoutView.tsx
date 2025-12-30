@@ -31,7 +31,7 @@ const CheckoutView: React.FC<CheckoutViewProps> = ({ cart, onBack, storeWhatsApp
 
     const productDetails = cart.map(item => {
       const price = formatCurrency(item.variant.price || item.product.price);
-      return `*Produk:* ${item.product.name}\n*Varian:* ${item.variant.colorName}\n*Jumlah:* ${item.quantity} pcs\n*Harga:* ${price}\n--------------------`;
+      return `*Produk:* ${item.product.name}\n*Varian:* ${item.variant.colorName}\n*Ukuran:* ${item.size}\n*Jumlah:* ${item.quantity} pcs\n*Harga:* ${price}\n--------------------`;
     }).join('\n');
     
     const totalPriceFormatted = formatCurrency(String(totalPrice));
@@ -73,13 +73,13 @@ const CheckoutView: React.FC<CheckoutViewProps> = ({ cart, onBack, storeWhatsApp
         {cart.map(item => (
             <div key={item.id} className="flex items-center gap-4 text-sm">
                 <img 
-                src={item.product.imageUrls?.[0] || 'https://via.placeholder.com/100'} 
+                src={item.variant.imageUrl || item.product.imageUrls?.[0]} 
                 alt={item.product.name}
                 className="w-12 h-12 rounded-lg object-cover bg-slate-100"
                 />
                 <div className="flex-grow">
                     <p className="font-bold text-slate-800">{item.product.name} <span className="text-slate-500 font-medium">x{item.quantity}</span></p>
-                    <p className="text-xs text-slate-500">Varian: {item.variant.colorName}</p>
+                    <p className="text-xs text-slate-500">Varian: {item.variant.colorName} / Ukuran: {item.size}</p>
                 </div>
                 <p className="font-bold text-slate-900">{formatCurrency(item.variant.price || item.product.price)}</p>
             </div>
