@@ -7,6 +7,7 @@ import SchemaNotice from './admin/SchemaNotice';
 import { supabase } from '../lib/supabaseClient';
 import IsActiveSchemaNotice from './admin/IsActiveSchemaNotice';
 import MultiCategorySchemaNotice from './admin/MultiCategorySchemaNotice';
+import { formatCurrency, unformatCurrency } from '../utils/formatters';
 
 interface ProductEditorProps {
   product: Product | null;
@@ -120,10 +121,17 @@ const ProductEditor: React.FC<ProductEditorProps> = ({ product, categories, onSa
   };
   
   const removeImage = (index: number) => setProductData(prev => prev ? { ...prev, imageUrls: prev.imageUrls.filter((_, i) => i !== index) } : null);
+  
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
-    setProductData(prev => prev ? { ...prev, [name]: value } : null);
+    if (name === 'price') {
+      const numericValue = unformatCurrency(value);
+      setProductData(prev => prev ? { ...prev, price: numericValue } : null);
+    } else {
+      setProductData(prev => prev ? { ...prev, [name]: value } : null);
+    }
   };
+
    const handleToggleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, checked } = e.target;
     setProductData(prev => prev ? { ...prev, [name]: checked } : null);
@@ -146,7 +154,11 @@ const ProductEditor: React.FC<ProductEditorProps> = ({ product, categories, onSa
     setProductData(prev => {
       if (!prev) return null;
       const newVariants = [...prev.variants];
-      (newVariants[index] as any)[name] = value;
+      if (name === 'price') {
+        (newVariants[index] as any)[name] = unformatCurrency(value);
+      } else {
+        (newVariants[index] as any)[name] = value;
+      }
       return { ...prev, variants: newVariants };
     });
   };
@@ -250,7 +262,7 @@ const ProductEditor: React.FC<ProductEditorProps> = ({ product, categories, onSa
                     </div>
                     <div className="flex-grow space-y-2">
                         <input type="text" name="colorName" value={variant.colorName} onChange={e => handleVariantChange(index, e)} placeholder="Nama Varian (cth: Merah)" required className="w-full p-2 rounded-md border-slate-300 font-medium text-sm" />
-                        <input type="text" name="price" value={variant.price} onChange={e => handleVariantChange(index, e)} placeholder="Harga Varian (opsional)" className="w-full p-2 rounded-md border-slate-300 font-medium text-sm" />
+                        <input type="text" name="price" value={formatCurrency(variant.price)} onChange={e => handleVariantChange(index, e)} placeholder="Harga Varian (opsional)" className="w-full p-2 rounded-md border-slate-300 font-medium text-sm" />
                     </div>
                     <button type="button" onClick={() => removeVariant(index)} className="text-red-500 hover:text-red-700 text-xs font-bold self-start">HAPUS</button>
                 </div>
@@ -266,7 +278,7 @@ const ProductEditor: React.FC<ProductEditorProps> = ({ product, categories, onSa
                     <div>
                         <label className="text-xs font-bold text-slate-500">Harga Utama</label>
                          <p className="text-xs text-slate-400 mb-1">Harga ini akan digunakan jika varian tidak memiliki harga spesifik.</p>
-                        <input type="text" name="price" value={productData.price} onChange={handleChange} placeholder="cth: 64000" required className="w-full p-3 mt-1 bg-slate-50 rounded-lg border border-slate-200 font-bold"/>
+                        <input type="text" name="price" value={formatCurrency(productData.price)} onChange={handleChange} placeholder="cth: Rp 64.000" required className="w-full p-3 mt-1 bg-slate-50 rounded-lg border border-slate-200 font-bold"/>
                     </div>
                     <div>
                         <label className="text-xs font-bold text-slate-500">Kategori</label>

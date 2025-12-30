@@ -23,3 +23,11 @@ export const formatCurrency = (price: string | undefined | null): string => {
   // 5. Gabungkan dengan prefix "Rp " untuk hasil akhir.
   return `Rp ${formattedNumber}`;
 };
+
+export const unformatCurrency = (value: string | undefined | null): string => {
+  if (value === null || value === undefined) {
+    return '';
+  }
+  // Menghapus semua karakter non-digit dari string
+  return value.toString().replace(/\D/g, '');
+};
