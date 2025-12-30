@@ -19,12 +19,9 @@ const DetailView: React.FC<DetailViewProps> = ({ product, selectedVariant, onVar
   // Efek untuk inisialisasi dan reset saat produk berubah
   useEffect(() => {
     window.scrollTo(0, 0);
-    // Pilih varian pertama secara default jika ada dan belum ada yang dipilih
-    if (product.variants.length > 0 && !selectedVariant) {
-      onVariantChange(product.variants[0]);
-    } else if (selectedVariant?.imageUrl) {
-       setActiveImageUrl(selectedVariant.imageUrl);
-    } else if (product.imageUrls && product.imageUrls.length > 0) {
+    // Saat produk berubah, selalu tampilkan gambar utama produk terlebih dahulu.
+    // Varian tidak lagi dipilih secara otomatis.
+    if (product.imageUrls && product.imageUrls.length > 0) {
       setActiveImageUrl(product.imageUrls[0]);
     }
     setQuantity(1); // Reset kuantitas saat produk berubah
