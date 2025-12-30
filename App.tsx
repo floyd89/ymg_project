@@ -223,18 +223,18 @@ const App: React.FC = () => {
     if (error) return <div className="flex-grow flex items-center justify-center min-h-[50vh]"><p className="text-red-500 font-bold bg-red-50 p-4 rounded-lg">{error}</p></div>;
 
     switch (currentView) {
-      case 'home': return <HomeView products={products} categories={categories} selectedCategory={selectedCategory} onSelectCategory={setSelectedCategory} onProductClick={handleProductClick} onGoProducts={navigateToProductsSection} storeLogoUrl={settings?.storeLogoUrl} storeName={settings?.storeName} />;
+      case 'home': return <HomeView products={products} categories={categories} selectedCategory={selectedCategory} onSelectCategory={setSelectedCategory} onProductClick={handleProductClick} onGoProducts={navigateToProductsSection} />;
       case 'detail': return selectedProduct && <DetailView product={selectedProduct} selectedVariant={selectedVariant} onVariantChange={setSelectedVariant} selectedSize={selectedSize} onSizeChange={setSelectedSize} onBack={handleBackNavigation} onAddToCart={handleAddToCart} onBuyNow={handleBuyNow} />;
       case 'about': return <AboutView onBack={handleBackNavigation} />;
       case 'cart': return <CartView cart={cart} onUpdateQuantity={handleUpdateCartQuantity} onRemoveItem={handleRemoveFromCart} onBack={handleBackNavigation} onCheckout={navigateToCheckout} />;
       case 'checkout': return settings && <CheckoutView cart={cart} onBack={() => navigateTo('cart')} storeWhatsAppNumber={settings.whatsAppNumber} />;
-      default: return <HomeView products={products} categories={categories} selectedCategory={selectedCategory} onSelectCategory={setSelectedCategory} onProductClick={handleProductClick} onGoProducts={navigateToProductsSection} storeLogoUrl={settings?.storeLogoUrl} storeName={settings?.storeName} />;
+      default: return <HomeView products={products} categories={categories} selectedCategory={selectedCategory} onSelectCategory={setSelectedCategory} onProductClick={handleProductClick} onGoProducts={navigateToProductsSection} />;
     }
   };
 
   return (
     <div className="min-h-screen flex flex-col bg-white">
-      <Navbar onGoHome={navigateToHome} onGoProducts={navigateToProductsSection} onGoAbout={navigateToAbout} onGoToCart={navigateToCart} cartItemCount={cartItemCount} storeLogoUrl={settings?.storeLogoUrl} storeName={settings?.storeName} />
+      <Navbar onGoHome={navigateToHome} onGoProducts={navigateToProductsSection} onGoAbout={navigateToAbout} onGoToCart={navigateToCart} cartItemCount={cartItemCount} />
       <main key={currentView} className="flex-grow animate-view-enter pb-24 md:pb-0">
         {renderContent()}
       </main>
