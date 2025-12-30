@@ -85,7 +85,7 @@ const App: React.FC = () => {
         categoryService.getCategories(),
         settingsService.getSettings()
       ]);
-      setProducts(fetchedProducts);
+      setProducts(fetchedProducts.filter(p => p.isActive));
       setCategories(fetchedCategories);
       setSettings(fetchedSettings);
     } catch (err) {

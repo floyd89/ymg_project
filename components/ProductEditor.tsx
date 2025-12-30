@@ -5,6 +5,7 @@ import { uploadImage, fileToBase64 } from '../utils/imageConverter';
 import SetupNotice from './admin/SetupNotice';
 import SchemaNotice from './admin/SchemaNotice';
 import { supabase } from '../lib/supabaseClient';
+import IsActiveSchemaNotice from './admin/IsActiveSchemaNotice';
 
 interface ProductEditorProps {
   product: Product | null;
@@ -93,6 +94,10 @@ const ProductEditor: React.FC<ProductEditorProps> = ({ product, categories, onSa
     let finalValue: string | number = value;
     setProductData(prev => prev ? { ...prev, [name]: finalValue } : null);
   };
+   const handleToggleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, checked } = e.target;
+    setProductData(prev => prev ? { ...prev, [name]: checked } : null);
+  };
   const handleVariantChange = (index: number, e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setProductData(prev => {
@@ -146,6 +151,7 @@ const ProductEditor: React.FC<ProductEditorProps> = ({ product, categories, onSa
       
       {uploadError === 'BUCKET_NOT_FOUND' && <SetupNotice onDismiss={() => setUploadError(null)} />}
       {saveError === 'SCHEMA_MISMATCH_IMAGEURLS' && <SchemaNotice onDismiss={onDismissSaveError} />}
+      {saveError === 'SCHEMA_MISMATCH_ISACTIVE' && <IsActiveSchemaNotice onDismiss={onDismissSaveError} />}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div className="lg:col-span-2 space-y-6">
@@ -212,6 +218,23 @@ const ProductEditor: React.FC<ProductEditorProps> = ({ product, categories, onSa
                         </select>
                          {categories.length === 0 && <p className="text-xs text-red-500 mt-1">Belum ada kategori. Tambahkan di halaman Kategori.</p>}
                     </div>
+                </div>
+            </div>
+             <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+                <h3 className="font-bold text-slate-800 mb-4">Status Produk</h3>
+                <div className="flex items-center justify-between bg-slate-50 p-4 rounded-lg">
+                    <label htmlFor="isActive" className="font-bold text-sm text-slate-800">Tampilkan di Toko</label>
+                    <label className="relative inline-flex items-center cursor-pointer">
+                        <input
+                            type="checkbox"
+                            id="isActive"
+                            name="isActive"
+                            checked={productData.isActive}
+                            onChange={handleToggleChange}
+                            className="sr-only peer"
+                        />
+                        <div className="w-11 h-6 bg-slate-200 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-slate-900"></div>
+                    </label>
                 </div>
             </div>
         </div>

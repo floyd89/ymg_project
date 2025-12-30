@@ -15,6 +15,7 @@ export interface Product {
   highlights: string[];
   imageUrls: string[]; 
   variants: ProductVariant[];
+  isActive: boolean;
 }
 
 export interface Banner {
@@ -44,16 +45,15 @@ export interface Category {
   created_at?: string;
 }
 
-// FIX: Add missing Order and OrderItem types based on usage in services/orderService.ts and views/admin/OrderListView.tsx.
-// Tipe data untuk manajemen pesanan
+// FIX: Add OrderStatus, OrderItem, and Order types to resolve import errors.
+export type OrderStatus = 'Diproses' | 'Dikirim' | 'Selesai' | 'Dibatalkan';
+
 export interface OrderItem {
   productId: string;
   productName: string;
   quantity: number;
   price: number;
 }
-
-export type OrderStatus = 'Diproses' | 'Dikirim' | 'Selesai' | 'Dibatalkan';
 
 export interface Order {
   id: string;

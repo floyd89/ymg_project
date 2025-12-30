@@ -6,6 +6,7 @@ import { categoryService } from '../../services/categoryService';
 import ProductEditor from '../../components/ProductEditor';
 import { supabase } from '../../lib/supabaseClient';
 import { formatCurrency } from '../../utils/formatters';
+import IsActiveSchemaNotice from '../../components/admin/IsActiveSchemaNotice';
 
 const ProductListView: React.FC = () => {
   const [products, setProducts] = useState<Product[]>([]);
@@ -57,7 +58,7 @@ const ProductListView: React.FC = () => {
   const handleAddNew = () => {
     const newProductTemplate: Product = {
       id: `new-product-${Date.now()}`, name: '', category: categories[0]?.name || '', price: '',
-      fullDescription: '', highlights: [], imageUrls: [], variants: [],
+      fullDescription: '', highlights: [], imageUrls: [], variants: [], isActive: false,
     };
     setEditingProduct(newProductTemplate);
   };
@@ -71,14 +72,30 @@ const ProductListView: React.FC = () => {
       alert('Produk berhasil disimpan!');
     } catch (err) {
       const errMsg = err instanceof Error ? err.message : '';
-      if (
-        errMsg.includes("Could not find the 'imageUrls' column") || 
-        errMsg.includes("Could not find the 'status' column") ||
-        errMsg.includes("Could not find the 'stock' column")
-      ) {
-        setSaveError('SCHEMA_MISMATCH_IMAGEURLS'); // Menggunakan flag yang sama untuk SchemaNotice
+      if (errMsg.includes('column "isActive" of relation "products" does not exist')) {
+        setSaveError('SCHEMA_MISMATCH_ISACTIVE');
+      } else if (errMsg.includes("Could not find the 'imageUrls' column")) {
+        setSaveError('SCHEMA_MISMATCH_IMAGEURLS');
       } else {
-        alert(err instanceof Error ? err.message : 'Terjadi kesalahan saat menyimpan produk.');
+        alert(errMsg || 'Terjadi kesalahan saat menyimpan produk.');
+      }
+    }
+  };
+  
+  const handleStatusChange = async (product: Product, newStatus: boolean) => {
+    // Optimistic UI update
+    setProducts(products.map(p => p.id === product.id ? { ...p, isActive: newStatus } : p));
+    
+    try {
+      await productService.updateProductStatus(product.id, newStatus);
+    } catch (err) {
+      // Revert on error
+      setProducts(products.map(p => p.id === product.id ? { ...p, isActive: !newStatus } : p));
+      const errMsg = err instanceof Error ? err.message : '';
+      if (errMsg.includes('column "isActive" of relation "products" does not exist')) {
+          setError('SCHEMA_MISMATCH_ISACTIVE'); // New error code
+      } else {
+          alert(errMsg || 'Gagal memperbarui status.');
       }
     }
   };
@@ -119,6 +136,9 @@ const ProductListView: React.FC = () => {
           Tambah Produk
         </button>
       </div>
+      
+      {error === 'SCHEMA_MISMATCH_ISACTIVE' && <IsActiveSchemaNotice onDismiss={() => setError(null)} />}
+
 
       <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm mt-6">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -140,6 +160,7 @@ const ProductListView: React.FC = () => {
                     <tr>
                       <th scope="col" className="px-6 py-4">Produk</th>
                       <th scope="col" className="px-6 py-4">Harga</th>
+                      <th scope="col" className="px-6 py-4">Status</th>
                       <th scope="col" className="px-6 py-4 text-right">Aksi</th>
                     </tr>
                   </thead>
@@ -154,6 +175,17 @@ const ProductListView: React.FC = () => {
                             </div>
                         </td>
                         <td className="px-6 py-4 text-slate-600 font-bold">{formatCurrency(p.price)}</td>
+                        <td className="px-6 py-4">
+                            <label className="relative inline-flex items-center cursor-pointer">
+                                <input
+                                type="checkbox"
+                                checked={p.isActive}
+                                onChange={(e) => handleStatusChange(p, e.target.checked)}
+                                className="sr-only peer"
+                                />
+                                <div className="w-11 h-6 bg-slate-200 rounded-full peer peer-focus:ring-2 peer-focus:ring-slate-300 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-slate-900"></div>
+                            </label>
+                        </td>
                         <td className="px-6 py-4 text-right space-x-2">
                           <button onClick={() => handleEdit(p)} className="font-bold text-slate-600 hover:text-slate-900 text-xs">EDIT</button>
                           <button onClick={() => handleDelete(p.id)} className="font-bold text-red-500 hover:text-red-700 text-xs">HAPUS</button>

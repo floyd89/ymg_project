@@ -22,6 +22,7 @@ const getProducts = async (): Promise<Product[]> => {
         variants: p.variants || [],
         highlights: p.highlights || [],
         imageUrls: Array.isArray(p.imageUrls) ? p.imageUrls : [],
+        isActive: p.isActive === null || p.isActive === undefined ? true : p.isActive,
       }));
   }
   const correctHostname = new URL(supabaseUrlString).hostname;
@@ -61,6 +62,7 @@ const getProducts = async (): Promise<Product[]> => {
       variants: p.variants || [],
       highlights: p.highlights || [],
       imageUrls: finalUrls,
+      isActive: p.isActive === null || p.isActive === undefined ? true : p.isActive,
     };
   });
 };
@@ -98,8 +100,21 @@ const deleteProduct = async (productId: string): Promise<void> => {
   }
 };
 
+const updateProductStatus = async (productId: string, isActive: boolean): Promise<void> => {
+  const { error } = await supabase
+    .from('products')
+    .update({ isActive: isActive })
+    .eq('id', productId);
+  
+  if (error) {
+    console.error("Error updating product status:", error);
+    throw new Error(`Gagal memperbarui status produk: ${error.message}`);
+  }
+};
+
 export const productService = {
   getProducts,
   saveProduct,
   deleteProduct,
+  updateProductStatus,
 };
