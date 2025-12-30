@@ -27,8 +27,6 @@ const ProductEditor: React.FC<ProductEditorProps> = ({ product, categories, onSa
       const initialData = {
           ...product,
           imageUrls: Array.isArray(product.imageUrls) ? product.imageUrls : [],
-          stock: product.stock || 0,
-          status: product.status || 'Draft',
           category: product.category || (categories.length > 0 ? categories[0].name : ''),
       };
       setProductData(JSON.parse(JSON.stringify(initialData)));
@@ -93,9 +91,6 @@ const ProductEditor: React.FC<ProductEditorProps> = ({ product, categories, onSa
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     let finalValue: string | number = value;
-    if (name === 'stock') {
-        finalValue = parseInt(value, 10) || 0;
-    }
     setProductData(prev => prev ? { ...prev, [name]: finalValue } : null);
   };
   const handleVariantChange = (index: number, e: React.ChangeEvent<HTMLInputElement>) => {
@@ -201,15 +196,7 @@ const ProductEditor: React.FC<ProductEditorProps> = ({ product, categories, onSa
         </div>
         <div className="space-y-6">
             <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
-                <h3 className="font-bold text-slate-800 mb-4">Status Produk</h3>
-                <select name="status" value={productData.status} onChange={handleChange} className="w-full p-3 bg-slate-50 rounded-lg border border-slate-200 font-medium text-sm">
-                    <option value="Published">Published</option>
-                    <option value="Draft">Draft</option>
-                </select>
-                <p className="text-xs text-slate-400 mt-2">'Published' akan tampil di toko, 'Draft' tersembunyi.</p>
-            </div>
-            <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
-                <h3 className="font-bold text-slate-800 mb-4">Harga & Inventaris</h3>
+                <h3 className="font-bold text-slate-800 mb-4">Harga & Kategori</h3>
                 <div className="space-y-4">
                     <div>
                         <label className="text-xs font-bold text-slate-500">Harga Utama</label>
@@ -224,10 +211,6 @@ const ProductEditor: React.FC<ProductEditorProps> = ({ product, categories, onSa
                             ))}
                         </select>
                          {categories.length === 0 && <p className="text-xs text-red-500 mt-1">Belum ada kategori. Tambahkan di halaman Kategori.</p>}
-                    </div>
-                     <div>
-                        <label className="text-xs font-bold text-slate-500">Stok</label>
-                        <input type="number" name="stock" value={productData.stock} onChange={handleChange} placeholder="0" required className="w-full p-3 mt-1 bg-slate-50 rounded-lg border border-slate-200 font-bold"/>
                     </div>
                 </div>
             </div>

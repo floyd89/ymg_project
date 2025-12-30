@@ -22,8 +22,6 @@ const getProducts = async (): Promise<Product[]> => {
         variants: p.variants || [],
         highlights: p.highlights || [],
         imageUrls: Array.isArray(p.imageUrls) ? p.imageUrls : [],
-        stock: p.stock || 0,
-        status: p.status || 'Draft',
       }));
   }
   const correctHostname = new URL(supabaseUrlString).hostname;
@@ -63,8 +61,6 @@ const getProducts = async (): Promise<Product[]> => {
       variants: p.variants || [],
       highlights: p.highlights || [],
       imageUrls: finalUrls,
-      stock: p.stock || 0, // Pastikan nilai default
-      status: p.status || 'Draft', // Pastikan nilai default
     };
   });
 };

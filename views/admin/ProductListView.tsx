@@ -16,7 +16,6 @@ const ProductListView: React.FC = () => {
   const [saveError, setSaveError] = useState<string | null>(null);
   
   const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState<'all' | 'Published' | 'Draft'>('all');
   const [categoryFilter, setCategoryFilter] = useState('all');
 
   const loadData = useCallback(async () => {
@@ -48,11 +47,10 @@ const ProductListView: React.FC = () => {
   const filteredProducts = useMemo(() => {
     return products.filter(p => {
       const matchSearch = p.name.toLowerCase().includes(searchTerm.toLowerCase());
-      const matchStatus = statusFilter === 'all' || p.status === statusFilter;
       const matchCategory = categoryFilter === 'all' || p.category === categoryFilter;
-      return matchSearch && matchStatus && matchCategory;
+      return matchSearch && matchCategory;
     });
-  }, [products, searchTerm, statusFilter, categoryFilter]);
+  }, [products, searchTerm, categoryFilter]);
 
   const handleEdit = (product: Product) => setEditingProduct(product);
 
@@ -60,7 +58,6 @@ const ProductListView: React.FC = () => {
     const newProductTemplate: Product = {
       id: `new-product-${Date.now()}`, name: '', category: categories[0]?.name || '', price: '',
       fullDescription: '', highlights: [], imageUrls: [], variants: [],
-      stock: 0, status: 'Draft',
     };
     setEditingProduct(newProductTemplate);
   };
@@ -111,12 +108,6 @@ const ProductListView: React.FC = () => {
     );
   }
 
-  const StatusBadge: React.FC<{ status: Product['status'] }> = ({ status }) => (
-    <span className={`px-2 py-0.5 text-[10px] font-black rounded-full ${
-      status === 'Published' ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-100 text-slate-600'
-    }`}>{status.toUpperCase()}</span>
-  );
-
   return (
     <div className="animate-view-enter">
       <div className="flex flex-col md:flex-row justify-between md:items-center mb-6 gap-4">
@@ -130,16 +121,11 @@ const ProductListView: React.FC = () => {
       </div>
 
       <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm mt-6">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <input type="text" placeholder="Cari produk..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="w-full p-2 bg-slate-50 rounded-lg border border-slate-200 font-medium text-sm focus:ring-2 focus:ring-slate-900 focus:border-slate-900" />
           <select value={categoryFilter} onChange={e => setCategoryFilter(e.target.value)} className="w-full p-2 bg-slate-50 rounded-lg border border-slate-200 font-medium text-sm focus:ring-2 focus:ring-slate-900 focus:border-slate-900">
             <option value="all">Semua Kategori</option>
             {categories.map(cat => <option key={cat.id} value={cat.name}>{cat.name}</option>)}
-          </select>
-          <select value={statusFilter} onChange={e => setStatusFilter(e.target.value as any)} className="w-full p-2 bg-slate-50 rounded-lg border border-slate-200 font-medium text-sm focus:ring-2 focus:ring-slate-900 focus:border-slate-900">
-            <option value="all">Semua Status</option>
-            <option value="Published">Published</option>
-            <option value="Draft">Draft</option>
           </select>
         </div>
       </div>
@@ -153,8 +139,6 @@ const ProductListView: React.FC = () => {
                   <thead className="bg-slate-50 text-xs text-slate-500 uppercase font-bold">
                     <tr>
                       <th scope="col" className="px-6 py-4">Produk</th>
-                      <th scope="col" className="px-6 py-4">Status</th>
-                      <th scope="col" className="px-6 py-4">Stok</th>
                       <th scope="col" className="px-6 py-4">Harga</th>
                       <th scope="col" className="px-6 py-4 text-right">Aksi</th>
                     </tr>
@@ -169,8 +153,6 @@ const ProductListView: React.FC = () => {
                                 <p className="font-normal text-xs text-slate-400">{p.category}</p>
                             </div>
                         </td>
-                        <td className="px-6 py-4"><StatusBadge status={p.status} /></td>
-                        <td className="px-6 py-4 text-slate-600 font-bold">{p.stock}</td>
                         <td className="px-6 py-4 text-slate-600 font-bold">{formatCurrency(p.price)}</td>
                         <td className="px-6 py-4 text-right space-x-2">
                           <button onClick={() => handleEdit(p)} className="font-bold text-slate-600 hover:text-slate-900 text-xs">EDIT</button>

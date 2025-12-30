@@ -15,8 +15,6 @@ export interface Product {
   highlights: string[];
   imageUrls: string[]; 
   variants: ProductVariant[];
-  stock: number; // Fitur baru untuk manajemen inventaris
-  status: 'Published' | 'Draft'; // Fitur baru untuk status produk
 }
 
 export interface Banner {
