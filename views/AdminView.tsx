@@ -76,7 +76,7 @@ const AdminLayout: React.FC = () => {
   // Logged-in view
   const NavLink: React.FC<{ view: AdminView; label: string; icon: React.ReactElement }> = ({ view, label, icon }) => (
     <a
-      href={`/admin#${view}`}
+      href={`/seller#${view}`}
       onClick={(e) => { e.preventDefault(); navigateTo(view); }}
       className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-colors text-sm font-bold ${
         currentView === view ? 'bg-slate-900 text-white' : 'text-slate-500 hover:bg-slate-100'

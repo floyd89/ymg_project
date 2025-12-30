@@ -28,7 +28,7 @@ const App: React.FC = () => {
     };
   }, []);
 
-  if (pathname.startsWith('/admin')) {
+  if (pathname.startsWith('/seller')) {
     return <AdminLayout />;
   }
 
