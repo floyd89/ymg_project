@@ -20,11 +20,10 @@ const HomeView: React.FC<HomeViewProps> = ({ products, categories, selectedCateg
   const filteredProducts = useMemo(() => {
     if (!products) return [];
     return products.filter(product => {
-      // Logika filter yang diperbarui untuk mendukung multi-kategori dengan andal.
-      // Memastikan `product.category` selalu diperlakukan sebagai array.
-      const productCategories = Array.isArray(product.category) ? product.category : [];
-      const matchesCategory = selectedCategory === 'Semua' || productCategories.includes(selectedCategory);
-      
+      // PERBAIKAN KRITIS: Logika filter disederhanakan untuk bekerja secara andal.
+      // Langsung menggunakan `product.category` yang dijamin berupa array oleh service,
+      // dan memeriksa apakah `selectedCategory` ada di dalamnya.
+      const matchesCategory = selectedCategory === 'Semua' || (product.category && product.category.includes(selectedCategory));
       const matchesSearch = !searchTerm || product.name.toLowerCase().includes(searchTerm.toLowerCase());
       return matchesCategory && matchesSearch;
     });
