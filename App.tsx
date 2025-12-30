@@ -161,6 +161,11 @@ const App: React.FC = () => {
       }
     });
   };
+  
+  const handleBuyNow = (product: Product, variant: ProductVariant, quantity: number) => {
+    handleAddToCart(product, variant, quantity);
+    navigateTo('checkout');
+  };
 
   const handleUpdateCartQuantity = (cartItemId: string, newQuantity: number) => {
     setCart(prevCart => {
@@ -205,7 +210,7 @@ const App: React.FC = () => {
 
     switch (currentView) {
       case 'home': return <HomeView products={products} categories={categories} selectedCategory={selectedCategory} onSelectCategory={setSelectedCategory} onProductClick={handleProductClick} onGoProducts={navigateToProductsSection} />;
-      case 'detail': return selectedProduct && <DetailView product={selectedProduct} selectedVariant={selectedVariant} onVariantChange={setSelectedVariant} onBack={handleBackNavigation} onAddToCart={handleAddToCart} />;
+      case 'detail': return selectedProduct && <DetailView product={selectedProduct} selectedVariant={selectedVariant} onVariantChange={setSelectedVariant} onBack={handleBackNavigation} onAddToCart={handleAddToCart} onBuyNow={handleBuyNow} />;
       case 'about': return <AboutView onBack={handleBackNavigation} />;
       case 'cart': return <CartView cart={cart} onUpdateQuantity={handleUpdateCartQuantity} onRemoveItem={handleRemoveFromCart} onBack={handleBackNavigation} onCheckout={navigateToCheckout} />;
       case 'checkout': return settings && <CheckoutView cart={cart} onBack={() => navigateTo('cart')} storeWhatsAppNumber={settings.whatsAppNumber} />;
@@ -229,6 +234,13 @@ const App: React.FC = () => {
           } else if (selectedProduct && !selectedProduct.variants.length) {
             handleAddToCart(selectedProduct, {id: 'default', colorName: 'Default', colorHex: ''}, 1);
             alert(`${selectedProduct.name} telah ditambahkan ke keranjang.`);
+          }
+        }}
+        onBuyNow={() => {
+          if (selectedProduct && selectedVariant) {
+            handleBuyNow(selectedProduct, selectedVariant, 1);
+          } else if (selectedProduct && !selectedProduct.variants.length) {
+            handleBuyNow(selectedProduct, {id: 'default', colorName: 'Default', colorHex: ''}, 1);
           }
         }}
         onGoToCart={navigateToCart}

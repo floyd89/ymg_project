@@ -9,9 +9,10 @@ interface DetailViewProps {
   onVariantChange: (variant: ProductVariant) => void;
   onBack: () => void;
   onAddToCart: (product: Product, variant: ProductVariant, quantity: number) => void;
+  onBuyNow: (product: Product, variant: ProductVariant, quantity: number) => void;
 }
 
-const DetailView: React.FC<DetailViewProps> = ({ product, selectedVariant, onVariantChange, onBack, onAddToCart }) => {
+const DetailView: React.FC<DetailViewProps> = ({ product, selectedVariant, onVariantChange, onBack, onAddToCart, onBuyNow }) => {
   const [activeImageUrl, setActiveImageUrl] = useState<string | null>(null);
   const [quantity, setQuantity] = useState(1);
 
@@ -36,10 +37,18 @@ const DetailView: React.FC<DetailViewProps> = ({ product, selectedVariant, onVar
       onAddToCart(product, selectedVariant, quantity);
       alert(`${quantity} x ${product.name} (${selectedVariant.colorName}) telah ditambahkan ke keranjang.`);
     } else if (isReadyToBuy && !hasVariants) {
-      // Handle products without variants, creating a dummy variant
       const dummyVariant = { id: 'default', colorName: 'Default', colorHex: '' };
       onAddToCart(product, dummyVariant, quantity);
       alert(`${quantity} x ${product.name} telah ditambahkan ke keranjang.`);
+    }
+  };
+
+  const handleBuyNow = () => {
+    if (isReadyToBuy && selectedVariant) {
+      onBuyNow(product, selectedVariant, quantity);
+    } else if (isReadyToBuy && !hasVariants) {
+      const dummyVariant = { id: 'default', colorName: 'Default', colorHex: '' };
+      onBuyNow(product, dummyVariant, quantity);
     }
   };
   
@@ -109,14 +118,23 @@ const DetailView: React.FC<DetailViewProps> = ({ product, selectedVariant, onVar
                     <button onClick={() => handleQuantityChange(1)} className="w-8 h-8 bg-white rounded-full font-bold text-slate-600">+</button>
                 </div>
              </div>
-             <button
-                onClick={handleAddToCart}
-                disabled={!isReadyToBuy}
-                className="w-full px-8 py-4 bg-slate-900 text-white rounded-2xl text-sm font-bold uppercase tracking-widest hover:bg-slate-800 transition-colors transform active:scale-95 shadow-lg shadow-slate-400/50 disabled:bg-slate-400 disabled:cursor-not-allowed flex items-center justify-center gap-3"
-            >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" /></svg>
-                <span>{isReadyToBuy ? 'Tambah ke Keranjang' : 'Pilih Varian Dulu'}</span>
-            </button>
+             <div className="flex items-center gap-4">
+                <button
+                    onClick={handleAddToCart}
+                    disabled={!isReadyToBuy}
+                    className="w-full px-6 py-4 bg-white border-2 border-slate-900 text-slate-900 rounded-2xl text-sm font-bold uppercase tracking-widest hover:bg-slate-50 transition-colors transform active:scale-95 disabled:border-slate-300 disabled:text-slate-400 disabled:cursor-not-allowed flex items-center justify-center gap-3"
+                >
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" /></svg>
+                    <span>Keranjang</span>
+                </button>
+                <button
+                    onClick={handleBuyNow}
+                    disabled={!isReadyToBuy}
+                    className="w-full px-8 py-4 bg-slate-900 text-white rounded-2xl text-sm font-bold uppercase tracking-widest hover:bg-slate-800 transition-colors transform active:scale-95 shadow-lg shadow-slate-400/50 disabled:bg-slate-400 disabled:cursor-not-allowed"
+                >
+                    <span>{isReadyToBuy ? 'Beli Sekarang' : 'Pilih Varian Dulu'}</span>
+                </button>
+             </div>
           </div>
         </div>
       </div>
