@@ -3,11 +3,27 @@ import { Category } from '../types';
 import { supabase } from '../lib/supabaseClient';
 
 const getCategories = async (): Promise<Category[]> => {
-  const { data, error } = await supabase
+  // Upaya pertama: kueri dengan pengurutan 'position'
+  let { data, error } = await supabase
     .from('categories')
     .select('*')
+    .order('position', { ascending: true, nullsFirst: false })
     .order('name', { ascending: true });
 
+  // Cek apakah error spesifik karena kolom 'position' tidak ada
+  if (error && (error.message.includes('column "position" does not exist') || error.message.includes("column categories.position does not exist"))) {
+      console.warn("Retrying getCategories without 'position' ordering. The 'position' column seems to be missing.");
+      
+      // Upaya kedua: coba lagi kueri tanpa pengurutan 'position'
+      const retryResult = await supabase
+        .from('categories')
+        .select('*')
+        .order('name', { ascending: true });
+        
+      data = retryResult.data;
+      error = retryResult.error;
+  }
+  
   if (error) {
     console.error("Error fetching categories:", error);
     throw error;
@@ -56,8 +72,26 @@ const deleteCategory = async (id: number): Promise<void> => {
   }
 };
 
+const updateCategoryOrder = async (orderedCategories: {id: number, position: number}[]): Promise<void> => {
+    const updatePromises = orderedCategories.map(c =>
+        supabase
+            .from('categories')
+            .update({ position: c.position })
+            .eq('id', c.id)
+    );
+
+    const results = await Promise.all(updatePromises);
+    const firstErrorResult = results.find(result => result.error);
+
+    if (firstErrorResult) {
+        console.error("Error updating category order:", firstErrorResult.error);
+        throw new Error(`Gagal menyimpan urutan kategori: ${firstErrorResult.error!.message}`);
+    }
+}
+
 export const categoryService = {
   getCategories,
   addCategory,
   deleteCategory,
+  updateCategoryOrder,
 };

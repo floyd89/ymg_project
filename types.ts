@@ -60,6 +60,7 @@ export interface Category {
   id: number;
   name: string;
   created_at?: string;
+  position: number | null;
 }
 
 // FIX: Add OrderStatus, OrderItem, and Order types to resolve import errors.

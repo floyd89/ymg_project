@@ -1,21 +1,31 @@
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Category } from '../../types';
 import { categoryService } from '../../services/categoryService';
 import { supabase } from '../../lib/supabaseClient';
 import CategorySchemaNotice from '../../components/admin/CategorySchemaNotice';
+import CategoryPositionSchemaNotice from '../../components/admin/CategoryPositionSchemaNotice';
 
 const CategoryListView: React.FC = () => {
   const [categories, setCategories] = useState<Category[]>([]);
+  const [originalCategories, setOriginalCategories] = useState<Category[]>([]);
   const [newCategoryName, setNewCategoryName] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [saveError, setSaveError] = useState<string | null>(null);
+  const [isOrderChanged, setIsOrderChanged] = useState(false);
+
+  const draggedItem = useRef<Category | null>(null);
+  const dragOverItem = useRef<Category | null>(null);
 
   const loadCategories = useCallback(async () => {
     setError(null);
+    setSaveError(null);
     try {
       const fetchedCategories = await categoryService.getCategories();
       setCategories(fetchedCategories);
+      setOriginalCategories(fetchedCategories);
+      setIsOrderChanged(false);
     } catch (err) {
       if (err instanceof Error && err.message.includes('relation "public.categories" does not exist')) {
         setError('SCHEMA_NOT_FOUND');
@@ -58,6 +68,48 @@ const CategoryListView: React.FC = () => {
     }
   };
 
+  const handleDragEnd = () => {
+    if (!draggedItem.current || !dragOverItem.current || draggedItem.current.id === dragOverItem.current.id) {
+        draggedItem.current = null;
+        dragOverItem.current = null;
+        return;
+    }
+
+    let items = [...categories];
+    const draggedItemIndex = items.findIndex(c => c.id === draggedItem.current!.id);
+    const dragOverItemIndex = items.findIndex(c => c.id === dragOverItem.current!.id);
+    
+    const [reorderedItem] = items.splice(draggedItemIndex, 1);
+    items.splice(dragOverItemIndex, 0, reorderedItem);
+
+    setCategories(items);
+    setIsOrderChanged(true);
+    
+    draggedItem.current = null;
+    dragOverItem.current = null;
+  };
+
+  const handleSaveOrder = async () => {
+    const categoriesToUpdate = categories.map((c, index) => ({ id: c.id, position: index }));
+    try {
+      await categoryService.updateCategoryOrder(categoriesToUpdate);
+      alert('Urutan kategori berhasil disimpan!');
+      await loadCategories();
+    } catch (err) {
+      const errMsg = err instanceof Error ? err.message : '';
+      if (errMsg.includes("'position' column") || errMsg.includes('"position" column')) {
+        setSaveError('SCHEMA_MISMATCH_POSITION');
+      } else {
+        alert(errMsg || 'Gagal menyimpan urutan kategori.');
+      }
+    }
+  };
+  
+  const handleCancelOrderChange = () => {
+    setCategories(originalCategories);
+    setIsOrderChanged(false);
+  };
+
   return (
     <div className="animate-view-enter">
       <div className="mb-6">
@@ -66,7 +118,18 @@ const CategoryListView: React.FC = () => {
       </div>
 
       {error === 'SCHEMA_NOT_FOUND' && <CategorySchemaNotice onDismiss={() => setError(null)} />}
+      {saveError === 'SCHEMA_MISMATCH_POSITION' && <CategoryPositionSchemaNotice onDismiss={() => setSaveError(null)} />}
       
+       {isOrderChanged && (
+        <div className="sticky top-2 z-30 mb-4 bg-slate-800 text-white p-3 rounded-xl flex justify-between items-center shadow-lg animate-view-enter">
+          <span className="text-sm font-bold">Anda telah mengubah urutan kategori.</span>
+          <div className="space-x-2">
+            <button onClick={handleCancelOrderChange} className="px-3 py-1 bg-slate-600 rounded-md text-xs font-bold hover:bg-slate-500">Batal</button>
+            <button onClick={handleSaveOrder} className="px-3 py-1 bg-white text-slate-900 rounded-md text-xs font-bold hover:bg-slate-200">Simpan Urutan</button>
+          </div>
+        </div>
+      )}
+
       <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
         <div className="md:col-span-1">
           <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
@@ -95,8 +158,19 @@ const CategoryListView: React.FC = () => {
              {!isLoading && !error && (
                 <ul className="divide-y divide-slate-100">
                   {categories.map(cat => (
-                    <li key={cat.id} className="flex justify-between items-center p-4 hover:bg-slate-50">
-                      <span className="font-bold text-slate-800">{cat.name}</span>
+                    <li 
+                      key={cat.id} 
+                      draggable
+                      onDragStart={() => (draggedItem.current = cat)}
+                      onDragEnter={() => (dragOverItem.current = cat)}
+                      onDragEnd={handleDragEnd}
+                      onDragOver={(e) => e.preventDefault()}
+                      className="flex justify-between items-center p-4 hover:bg-slate-50 cursor-grab active:cursor-grabbing"
+                    >
+                      <div className="flex items-center gap-4">
+                        <span className="text-slate-400">☰</span>
+                        <span className="font-bold text-slate-800">{cat.name}</span>
+                      </div>
                       <button 
                         onClick={() => handleDeleteCategory(cat.id, cat.name)} 
                         className="font-bold text-red-500 hover:text-red-700 text-xs"
