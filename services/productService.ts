@@ -65,9 +65,9 @@ const getProducts = async (): Promise<Product[]> => {
                 // Pisahkan berdasarkan koma, lalu bersihkan spasi dan tanda kutip
                 return content.split(',').map(c => c.trim().replace(/"/g, ''));
             }
-            // Menangani string kategori tunggal
+            // FIX: Menangani string yang dipisahkan koma atau string kategori tunggal
             if (category.length > 0) {
-                return [category];
+                return category.split(',').map(c => c.trim()).filter(Boolean);
             }
         }
         // Kembalikan array kosong untuk null, undefined, dll.
