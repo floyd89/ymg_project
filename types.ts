@@ -6,6 +6,11 @@ export interface ProductVariant {
   price?: string; // Harga spesifik untuk varian, opsional
 }
 
+export interface ProductSize {
+  id: string;
+  name: string;
+}
+
 export interface Product {
   id:string;
   name: string;
@@ -15,8 +20,7 @@ export interface Product {
   highlights: string[];
   imageUrls: string[]; 
   variants: ProductVariant[];
-  size?: string; // Opsional, untuk dimensi seperti PxLxT
-  availableSizes?: string[]; // Opsional, untuk pilihan ukuran seperti S, M, L
+  sizes: ProductSize[];
   isActive: boolean;
 }
 

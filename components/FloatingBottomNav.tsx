@@ -37,7 +37,7 @@ const FloatingBottomNav: React.FC<FloatingBottomNavProps> = ({ onHomeClick, onAb
 
   if (activeProduct) {
     const hasVariants = activeProduct.variants && activeProduct.variants.length > 0;
-    const hasSizes = activeProduct.availableSizes && activeProduct.availableSizes.length > 0;
+    const hasSizes = activeProduct.sizes && activeProduct.sizes.length > 0;
 
     if (hasVariants && !activeVariant) {
       return (

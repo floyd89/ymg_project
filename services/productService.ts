@@ -23,8 +23,7 @@ const getProducts = async (): Promise<Product[]> => {
         imageUrls: Array.isArray(p.imageUrls) ? p.imageUrls : [],
         isActive: p.isActive === null || p.isActive === undefined ? true : p.isActive,
         category: Array.isArray(p.category) ? p.category : [],
-        size: p.size || '',
-        availableSizes: p.availableSizes || [],
+        sizes: p.sizes || [],
       }));
   }
   const BUCKET_NAME = 'store-images';
@@ -91,8 +90,7 @@ const getProducts = async (): Promise<Product[]> => {
       variants: processedVariants,
       highlights: p.highlights || [],
       imageUrls: finalUrls,
-      size: p.size || '',
-      availableSizes: p.availableSizes || [],
+      sizes: p.sizes || [],
       isActive: p.isActive === null || p.isActive === undefined ? true : p.isActive,
     };
   });

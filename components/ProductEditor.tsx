@@ -1,14 +1,13 @@
 
 import React, { useState, useEffect } from 'react';
-import { Product, ProductVariant, Category } from '../types';
+import { Product, ProductVariant, Category, ProductSize } from '../types';
 import { uploadImage, fileToBase64 } from '../utils/imageConverter';
 import SetupNotice from './admin/SetupNotice';
 import SchemaNotice from './admin/SchemaNotice';
 import { supabase } from '../lib/supabaseClient';
 import IsActiveSchemaNotice from './admin/IsActiveSchemaNotice';
 import MultiCategorySchemaNotice from './admin/MultiCategorySchemaNotice';
-import SizeSchemaNotice from './admin/SizeSchemaNotice';
-import AvailableSizesSchemaNotice from './admin/AvailableSizesSchemaNotice';
+import SizesJsonSchemaNotice from './admin/SizesJsonSchemaNotice';
 import { formatCurrency, unformatCurrency } from '../utils/formatters';
 
 interface ProductEditorProps {
@@ -133,9 +132,6 @@ const ProductEditor: React.FC<ProductEditorProps> = ({ product, categories, onSa
     if (name === 'price') {
       const numericValue = unformatCurrency(value);
       setProductData(prev => prev ? { ...prev, price: numericValue } : null);
-    } else if (name === 'availableSizes') {
-      const sizes = value.split(',').map(s => s.trim().toUpperCase()).filter(Boolean);
-      setProductData(prev => prev ? { ...prev, availableSizes: sizes } : null);
     } else {
       setProductData(prev => prev ? { ...prev, [name]: value } : null);
     }
@@ -149,18 +145,15 @@ const ProductEditor: React.FC<ProductEditorProps> = ({ product, categories, onSa
    const handleCategoryChange = (categoryName: string, isChecked: boolean) => {
     setProductData(prev => {
         if (!prev) return null;
-        // Gunakan Set untuk secara otomatis menangani data duplikat dan
-        // memastikan daftar kategori selalu unik.
         const currentCategories = Array.isArray(prev.category) ? prev.category : [];
         const categorySet = new Set(currentCategories);
 
         if (isChecked) {
-            categorySet.add(categoryName); // `add` tidak akan melakukan apa-apa jika item sudah ada.
+            categorySet.add(categoryName);
         } else {
             categorySet.delete(categoryName);
         }
         
-        // Konversi kembali Set menjadi array untuk disimpan di state.
         const newCategories = Array.from(categorySet);
 
         return { ...prev, category: newCategories };
@@ -182,6 +175,19 @@ const ProductEditor: React.FC<ProductEditorProps> = ({ product, categories, onSa
   };
   const addVariant = () => setProductData(prev => prev ? { ...prev, variants: [...prev.variants, { id: `variant-${Date.now()}`, colorName: '', imageUrl: '', price: '' }] } : null);
   const removeVariant = (index: number) => setProductData(prev => prev ? { ...prev, variants: prev.variants.filter((_, i) => i !== index) } : null);
+
+  const handleSizeChange = (index: number, e: React.ChangeEvent<HTMLInputElement>) => {
+    const { value } = e.target;
+    setProductData(prev => {
+      if (!prev) return null;
+      const newSizes = [...prev.sizes];
+      newSizes[index].name = value.toUpperCase();
+      return { ...prev, sizes: newSizes };
+    });
+  };
+  const addSize = () => setProductData(prev => prev ? { ...prev, sizes: [...(prev.sizes || []), { id: `size-${Date.now()}`, name: '' }] } : null);
+  const removeSize = (index: number) => setProductData(prev => prev ? { ...prev, sizes: prev.sizes.filter((_, i) => i !== index) } : null);
+
   const handleDragStart = (index: number) => setDraggedIndex(index);
   const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => e.preventDefault();
   const handleDrop = (dropIndex: number) => {
@@ -230,8 +236,7 @@ const ProductEditor: React.FC<ProductEditorProps> = ({ product, categories, onSa
       {saveError === 'SCHEMA_MISMATCH_IMAGEURLS' && <SchemaNotice onDismiss={onDismissSaveError} />}
       {saveError === 'SCHEMA_MISMATCH_ISACTIVE' && <IsActiveSchemaNotice onDismiss={onDismissSaveError} />}
       {saveError === 'SCHEMA_MISMATCH_CATEGORY_ARRAY' && <MultiCategorySchemaNotice onDismiss={onDismissSaveError} />}
-      {saveError === 'SCHEMA_MISMATCH_SIZE' && <SizeSchemaNotice onDismiss={onDismissSaveError} />}
-      {saveError === 'SCHEMA_MISMATCH_AVAILABLE_SIZES' && <AvailableSizesSchemaNotice onDismiss={onDismissSaveError} />}
+      {saveError === 'SCHEMA_MISMATCH_SIZES_JSON' && <SizesJsonSchemaNotice onDismiss={onDismissSaveError} />}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div className="lg:col-span-2 space-y-6">
@@ -240,8 +245,6 @@ const ProductEditor: React.FC<ProductEditorProps> = ({ product, categories, onSa
             <div className="space-y-4">
                 <input type="text" name="name" value={productData.name} onChange={handleChange} placeholder="Nama Produk" required className="w-full p-3 bg-slate-50 rounded-lg border border-slate-200 font-bold"/>
                 <textarea name="fullDescription" value={productData.fullDescription} onChange={handleChange} placeholder="Deskripsi Lengkap" required rows={5} className="w-full p-3 bg-slate-50 rounded-lg border border-slate-200 font-medium text-sm" />
-                <textarea name="size" value={productData.size || ''} onChange={handleChange} placeholder="Detail Ukuran & Dimensi (opsional), cth: P: 30cm, L: 15cm, T: 45cm" rows={2} className="w-full p-3 bg-slate-50 rounded-lg border border-slate-200 font-medium text-sm" />
-                <textarea name="availableSizes" value={productData.availableSizes?.join(', ') || ''} onChange={handleChange} placeholder="Pilihan Ukuran Tersedia, pisahkan koma (cth: S, M, L, XL)" rows={2} className="w-full p-3 bg-slate-50 rounded-lg border border-slate-200 font-medium text-sm" />
             </div>
           </div>
           <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
@@ -267,6 +270,20 @@ const ProductEditor: React.FC<ProductEditorProps> = ({ product, categories, onSa
                 <label className="aspect-square flex flex-col items-center justify-center border-2 border-dashed border-slate-300 rounded-lg cursor-pointer hover:bg-slate-50"><svg className="w-8 h-8 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M12 4v16m8-8H4" /></svg><input type="file" multiple accept="image/*" className="hidden" onChange={e => handleImageFilesUpload(e.target.files)} /></label>
               )}
             </div>
+          </div>
+           <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+            <h3 className="font-bold text-slate-800 mb-4">Ukuran Produk (Opsional)</h3>
+            <div className="space-y-3">
+              {(productData.sizes || []).map((size, index) => (
+                <div key={size.id} className="flex gap-4 items-center p-3 bg-slate-50 rounded-lg border">
+                    <div className="flex-grow">
+                        <input type="text" name="name" value={size.name} onChange={e => handleSizeChange(index, e)} placeholder="Nama Ukuran (cth: S, M, L, XL)" required className="w-full p-2 rounded-md border-slate-300 font-medium text-sm" />
+                    </div>
+                    <button type="button" onClick={() => removeSize(index)} className="text-red-500 hover:text-red-700 text-xs font-bold self-center">HAPUS</button>
+                </div>
+              ))}
+            </div>
+            <button type="button" onClick={addSize} className="mt-4 px-4 py-2 bg-slate-200 text-slate-800 rounded-lg text-xs font-bold hover:bg-slate-300">Tambah Ukuran</button>
           </div>
            <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
             <h3 className="font-bold text-slate-800 mb-4">Varian Produk</h3>

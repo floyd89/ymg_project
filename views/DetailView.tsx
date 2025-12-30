@@ -36,7 +36,7 @@ const DetailView: React.FC<DetailViewProps> = ({ product, selectedVariant, onVar
   const displayPrice = useMemo(() => selectedVariant?.price || product.price, [selectedVariant, product.price]);
   const hasVariants = product.variants && product.variants.length > 0;
   const hasImages = product.imageUrls && product.imageUrls.length > 0;
-  const hasSizes = product.availableSizes && product.availableSizes.length > 0;
+  const hasSizes = product.sizes && product.sizes.length > 0;
   
   const isReadyForCart = (!hasVariants || !!selectedVariant) && (!hasSizes || !!selectedSize);
 
@@ -112,19 +112,12 @@ const DetailView: React.FC<DetailViewProps> = ({ product, selectedVariant, onVar
             <div id="size-selector" className="mb-8 scroll-mt-24 animate-view-enter">
               <h3 className="text-[10px] font-black text-slate-900 uppercase tracking-widest mb-4">Pilih Ukuran</h3>
               <div className="flex flex-wrap items-start gap-3">
-                {product.availableSizes.map(size => (
-                  <button key={size} onClick={() => onSizeChange(size)} className={`px-4 py-2 rounded-full text-sm font-bold border-2 transition-all ${selectedSize === size ? 'bg-slate-900 text-white border-slate-900' : 'bg-white text-slate-800 border-slate-200 hover:border-slate-400'}`}>
-                    {size}
+                {product.sizes.map(size => (
+                  <button key={size.id} onClick={() => onSizeChange(size.name)} className={`px-4 py-2 rounded-full text-sm font-bold border-2 transition-all ${selectedSize === size.name ? 'bg-slate-900 text-white border-slate-900' : 'bg-white text-slate-800 border-slate-200 hover:border-slate-400'}`}>
+                    {size.name}
                   </button>
                 ))}
               </div>
-            </div>
-          )}
-          
-          {product.size && (
-            <div className="mb-6 animate-view-enter">
-                <h3 className="text-[10px] font-black text-slate-900 uppercase tracking-widest mb-2">Ukuran & Dimensi</h3>
-                <p className="text-slate-500 leading-relaxed text-sm font-medium whitespace-pre-wrap">{product.size}</p>
             </div>
           )}
 

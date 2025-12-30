@@ -59,7 +59,7 @@ const ProductListView: React.FC = () => {
   const handleAddNew = () => {
     const newProductTemplate: Product = {
       id: `new-product-${Date.now()}`, name: '', category: [], price: '',
-      fullDescription: '', highlights: [], imageUrls: [], variants: [], isActive: false, size: '', availableSizes: [],
+      fullDescription: '', highlights: [], imageUrls: [], variants: [], sizes: [], isActive: false,
     };
     setEditingProduct(newProductTemplate);
   };
@@ -73,7 +73,9 @@ const ProductListView: React.FC = () => {
       alert('Produk berhasil disimpan!');
     } catch (err) {
       const errMsg = err instanceof Error ? err.message : '';
-      if (errMsg.includes('column "availableSizes" of relation "products" does not exist')) {
+      if (errMsg.includes('column "sizes" of relation "products" does not exist')) {
+        setSaveError('SCHEMA_MISMATCH_SIZES_JSON');
+      } else if (errMsg.includes('column "availableSizes" of relation "products" does not exist')) {
         setSaveError('SCHEMA_MISMATCH_AVAILABLE_SIZES');
       } else if (errMsg.includes('column "size" of relation "products" does not exist')) {
         setSaveError('SCHEMA_MISMATCH_SIZE');
