@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { Product, Category } from '../../types';
 import { productService } from '../../services/productService';
 import { categoryService } from '../../services/categoryService';
@@ -8,9 +8,11 @@ import { supabase } from '../../lib/supabaseClient';
 import { formatCurrency } from '../../utils/formatters';
 import IsActiveSchemaNotice from '../../components/admin/IsActiveSchemaNotice';
 import MultiCategorySchemaNotice from '../../components/admin/MultiCategorySchemaNotice';
+import PositionSchemaNotice from '../../components/admin/PositionSchemaNotice';
 
 const ProductListView: React.FC = () => {
   const [products, setProducts] = useState<Product[]>([]);
+  const [originalProducts, setOriginalProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -19,16 +21,23 @@ const ProductListView: React.FC = () => {
   
   const [searchTerm, setSearchTerm] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('all');
+  const [isOrderChanged, setIsOrderChanged] = useState(false);
+
+  const draggedItem = useRef<Product | null>(null);
+  const dragOverItem = useRef<Product | null>(null);
 
   const loadData = useCallback(async () => {
     setError(null);
+    setIsLoading(true);
     try {
       const [fetchedProducts, fetchedCategories] = await Promise.all([
         productService.getProducts(),
         categoryService.getCategories()
       ]);
       setProducts(fetchedProducts);
+      setOriginalProducts(fetchedProducts);
       setCategories(fetchedCategories);
+      setIsOrderChanged(false);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Gagal memuat data.');
     } finally {
@@ -54,12 +63,15 @@ const ProductListView: React.FC = () => {
     });
   }, [products, searchTerm, categoryFilter]);
 
+  const isFilterActive = useMemo(() => searchTerm !== '' || categoryFilter !== 'all', [searchTerm, categoryFilter]);
+
   const handleEdit = (product: Product) => setEditingProduct(product);
 
   const handleAddNew = () => {
     const newProductTemplate: Product = {
       id: `new-product-${Date.now()}`, name: '', category: [], price: '',
       fullDescription: '', highlights: [], imageUrls: [], variants: [], sizes: [], isActive: false,
+      position: null
     };
     setEditingProduct(newProductTemplate);
   };
@@ -73,7 +85,9 @@ const ProductListView: React.FC = () => {
       alert('Produk berhasil disimpan!');
     } catch (err) {
       const errMsg = err instanceof Error ? err.message : '';
-      if (errMsg.includes("'sizes' column") || errMsg.includes('"sizes" column')) {
+      if (errMsg.includes("'position' column") || errMsg.includes('"position" column')) {
+        setSaveError('SCHEMA_MISMATCH_POSITION');
+      } else if (errMsg.includes("'sizes' column") || errMsg.includes('"sizes" column')) {
         setSaveError('SCHEMA_MISMATCH_SIZES_JSON');
       } else if (errMsg.includes('column "availableSizes" of relation "products" does not exist')) {
         setSaveError('SCHEMA_MISMATCH_AVAILABLE_SIZES');
@@ -92,13 +106,11 @@ const ProductListView: React.FC = () => {
   };
   
   const handleStatusChange = async (product: Product, newStatus: boolean) => {
-    // Optimistic UI update
     setProducts(products.map(p => p.id === product.id ? { ...p, isActive: newStatus } : p));
     
     try {
       await productService.updateProductStatus(product.id, newStatus);
     } catch (err) {
-      // Revert on error
       setProducts(products.map(p => p.id === product.id ? { ...p, isActive: !newStatus } : p));
       const errMsg = err instanceof Error ? err.message : '';
       if (errMsg.includes("'isActive' column") || errMsg.includes('"isActive" column')) {
@@ -120,6 +132,70 @@ const ProductListView: React.FC = () => {
       }
     }
   };
+  
+  const handleSort = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const sortType = e.target.value;
+    let sortedProducts = [...products];
+
+    if (sortType === 'name-asc') {
+        sortedProducts.sort((a, b) => a.name.localeCompare(b.name));
+    } else if (sortType === 'newest') {
+        // Asumsi `id` mengandung timestamp. Jika ada `created_at`, itu lebih baik.
+        sortedProducts.sort((a, b) => (b.id > a.id ? 1 : -1));
+    } else if (sortType === 'oldest') {
+        sortedProducts.sort((a, b) => (a.id > b.id ? 1 : -1));
+    } else if (sortType === 'custom') {
+        sortedProducts = [...originalProducts];
+    }
+    
+    setProducts(sortedProducts);
+    setIsOrderChanged(true);
+  };
+
+  const handleSaveOrder = async () => {
+    const productsToUpdate = products.map((p, index) => ({ id: p.id, position: index }));
+    try {
+        await productService.updateProductOrder(productsToUpdate);
+        alert('Urutan produk berhasil disimpan!');
+        await loadData(); // Reload to confirm and reset state
+    } catch (err) {
+        const errMsg = err instanceof Error ? err.message : '';
+        if (errMsg.includes("'position' column") || errMsg.includes('"position" column')) {
+            setSaveError('SCHEMA_MISMATCH_POSITION');
+        } else {
+            alert(errMsg || 'Gagal menyimpan urutan.');
+        }
+    }
+  };
+
+  const handleCancelOrderChange = () => {
+      setProducts(originalProducts);
+      setIsOrderChanged(false);
+  };
+  
+  const handleDragEnd = () => {
+    if (!draggedItem.current || !dragOverItem.current || draggedItem.current.id === dragOverItem.current.id) {
+        draggedItem.current = null;
+        dragOverItem.current = null;
+        return;
+    }
+
+    let items = [...products];
+    const draggedItemIndex = items.findIndex(p => p.id === draggedItem.current!.id);
+    const dragOverItemIndex = items.findIndex(p => p.id === dragOverItem.current!.id);
+
+    // Remove the dragged item from its original position
+    const [reorderedItem] = items.splice(draggedItemIndex, 1);
+    // Insert it at the new position
+    items.splice(dragOverItemIndex, 0, reorderedItem);
+
+    setProducts(items);
+    setIsOrderChanged(true);
+    
+    draggedItem.current = null;
+    dragOverItem.current = null;
+  };
+
 
   if (editingProduct) {
     return (
@@ -148,17 +224,34 @@ const ProductListView: React.FC = () => {
       
       {error === 'SCHEMA_MISMATCH_ISACTIVE' && <IsActiveSchemaNotice onDismiss={() => setError(null)} />}
       {saveError === 'SCHEMA_MISMATCH_CATEGORY_ARRAY' && <MultiCategorySchemaNotice onDismiss={() => setSaveError(null)} />}
+      {saveError === 'SCHEMA_MISMATCH_POSITION' && <PositionSchemaNotice onDismiss={() => setSaveError(null)} />}
 
 
       <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm mt-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <input type="text" placeholder="Cari produk..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="w-full p-2 bg-slate-50 rounded-lg border border-slate-200 font-medium text-sm focus:ring-2 focus:ring-slate-900 focus:border-slate-900" />
-          <select value={categoryFilter} onChange={e => setCategoryFilter(e.target.value)} className="w-full p-2 bg-slate-50 rounded-lg border border-slate-200 font-medium text-sm focus:ring-2 focus:ring-slate-900 focus:border-slate-900">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <input type="text" placeholder="Cari produk..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="md:col-span-1 w-full p-2 bg-slate-50 rounded-lg border border-slate-200 font-medium text-sm focus:ring-2 focus:ring-slate-900 focus:border-slate-900" />
+          <select value={categoryFilter} onChange={e => setCategoryFilter(e.target.value)} className="md:col-span-1 w-full p-2 bg-slate-50 rounded-lg border border-slate-200 font-medium text-sm focus:ring-2 focus:ring-slate-900 focus:border-slate-900">
             <option value="all">Semua Kategori</option>
             {categories.map(cat => <option key={cat.id} value={cat.name}>{cat.name}</option>)}
           </select>
+           <select onChange={handleSort} disabled={isFilterActive} className="md:col-span-1 w-full p-2 bg-slate-50 rounded-lg border border-slate-200 font-medium text-sm focus:ring-2 focus:ring-slate-900 focus:border-slate-900 disabled:opacity-50 disabled:cursor-not-allowed">
+            <option value="custom">Urutan Kustom</option>
+            <option value="newest">Terbaru</option>
+            <option value="oldest">Terlama</option>
+            <option value="name-asc">Nama (A-Z)</option>
+          </select>
         </div>
+        {isFilterActive && <p className="text-xs text-slate-500 mt-2">Urutan produk hanya dapat diubah jika filter tidak aktif.</p>}
       </div>
+       {isOrderChanged && (
+        <div className="sticky top-2 z-30 mt-4 bg-slate-800 text-white p-3 rounded-xl flex justify-between items-center shadow-lg animate-view-enter">
+          <span className="text-sm font-bold">Anda telah mengubah urutan produk.</span>
+          <div className="space-x-2">
+            <button onClick={handleCancelOrderChange} className="px-3 py-1 bg-slate-600 rounded-md text-xs font-bold hover:bg-slate-500">Batal</button>
+            <button onClick={handleSaveOrder} className="px-3 py-1 bg-white text-slate-900 rounded-md text-xs font-bold hover:bg-slate-200">Simpan Urutan</button>
+          </div>
+        </div>
+      )}
       
       <div className="mt-6">
         {isLoading && <div className="text-center p-10"><div className="w-8 h-8 border-2 border-slate-200 border-t-slate-900 rounded-full animate-spin mx-auto"></div></div>}
@@ -176,8 +269,9 @@ const ProductListView: React.FC = () => {
                   </thead>
                   <tbody>
                     {filteredProducts.map(p => (
-                      <tr key={p.id} className="border-b border-slate-100 hover:bg-slate-50">
+                      <tr key={p.id} draggable={!isFilterActive} onDragStart={() => (draggedItem.current = p)} onDragEnter={() => (dragOverItem.current = p)} onDragEnd={handleDragEnd} onDragOver={(e) => e.preventDefault()} className={`border-b border-slate-100 hover:bg-slate-50 ${!isFilterActive ? 'cursor-grab' : ''}`}>
                         <td className="px-6 py-4 font-bold text-slate-900 flex items-center gap-4">
+                            {!isFilterActive && <span className="text-slate-300">☰</span>}
                             <img src={p.imageUrls?.[0] || 'https://via.placeholder.com/100'} alt={p.name} className="w-10 h-10 rounded-md object-cover bg-slate-100" />
                             <div>
                                 {p.name}

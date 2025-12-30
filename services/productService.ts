@@ -6,6 +6,7 @@ const getProducts = async (): Promise<Product[]> => {
   const { data, error } = await supabase
     .from('products')
     .select('*')
+    .order('position', { ascending: true, nullsFirst: false })
     .order('created_at', { ascending: false });
 
   if (error) {
@@ -99,6 +100,7 @@ const getProducts = async (): Promise<Product[]> => {
       highlights: p.highlights || [],
       imageUrls: finalUrls,
       isActive: p.isActive === null || p.isActive === undefined ? true : p.isActive,
+      position: p.position,
     };
   });
 };
@@ -194,9 +196,21 @@ const updateProductStatus = async (productId: string, isActive: boolean): Promis
   }
 };
 
+const updateProductOrder = async (orderedProducts: {id: string, position: number}[]): Promise<void> => {
+    const { error } = await supabase
+        .from('products')
+        .upsert(orderedProducts);
+    
+    if (error) {
+        console.error("Error updating product order:", error);
+        throw new Error(`Gagal menyimpan urutan produk: ${error.message}`);
+    }
+}
+
 export const productService = {
   getProducts,
   saveProduct,
   deleteProduct,
   updateProductStatus,
+  updateProductOrder
 };

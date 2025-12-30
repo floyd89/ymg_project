@@ -24,6 +24,7 @@ export interface Product {
   variants: ProductVariant[];
   sizes: ProductSize[];
   isActive: boolean;
+  position: number | null;
 }
 
 export interface Banner {
