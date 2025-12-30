@@ -69,9 +69,9 @@ const ProductEditor: React.FC<ProductEditorProps> = ({ product, categories, onSa
   const handleImageFilesUpload = (files: FileList | null) => {
     if (!files || !productData) return;
     const currentImageCount = productData.imageUrls.length + Object.keys(imagePreviews).length;
-    const availableSlots = 6 - currentImageCount;
+    const availableSlots = 9 - currentImageCount;
     if (availableSlots <= 0) {
-        alert("Maksimal 6 foto produk utama.");
+        alert("Maksimal 9 foto produk utama.");
         return;
     }
     const filesToUpload = Array.from(files).slice(0, availableSlots);
@@ -254,7 +254,7 @@ const ProductEditor: React.FC<ProductEditorProps> = ({ product, categories, onSa
                     </div>
                 </div>
               ))}
-              {(productData.imageUrls.length + Object.keys(imagePreviews).length) < 6 && (
+              {(productData.imageUrls.length + Object.keys(imagePreviews).length) < 9 && (
                 <label className="aspect-square flex flex-col items-center justify-center border-2 border-dashed border-slate-300 rounded-lg cursor-pointer hover:bg-slate-50"><svg className="w-8 h-8 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M12 4v16m8-8H4" /></svg><input type="file" multiple accept="image/*" className="hidden" onChange={e => handleImageFilesUpload(e.target.files)} /></label>
               )}
             </div>
