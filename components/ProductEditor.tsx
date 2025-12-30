@@ -38,8 +38,10 @@ const ProductEditor: React.FC<ProductEditorProps> = ({ product, categories, onSa
                     if (content === '') return [];
                     return content.split(',').map(c => c.trim().replace(/"/g, ''));
                 }
+                // FIX KRITIS: Memisahkan string yang mengandung koma menjadi array.
+                // Ini memastikan "Tas, Wanita" menjadi ["Tas", "Wanita"].
                 if (category.length > 0) {
-                    return [category];
+                    return category.split(',').map(c => c.trim()).filter(Boolean);
                 }
             }
             return [];
