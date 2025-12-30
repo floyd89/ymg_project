@@ -37,7 +37,7 @@ export interface AppSettings {
   telegramUrl?: string | null;
 }
 
-export type View = 'home' | 'detail' | 'about';
+export type View = 'home' | 'detail' | 'about' | 'checkout';
 
 // Tipe data baru untuk manajemen pesanan
 export interface OrderItem {

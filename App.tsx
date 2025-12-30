@@ -6,10 +6,12 @@ import FloatingBottomNav from './components/FloatingBottomNav';
 import HomeView from './views/HomeView';
 import DetailView from './views/DetailView';
 import AboutView from './views/AboutView';
+import CheckoutView from './views/CheckoutView';
 import AdminLayout from './views/AdminView';
-import { View, Product, ProductVariant, Category } from './types';
+import { View, Product, ProductVariant, Category, AppSettings } from './types';
 import { productService } from './services/productService';
 import { categoryService } from './services/categoryService';
+import { settingsService } from './services/settingsService';
 import { supabase } from './lib/supabaseClient';
 
 const App: React.FC = () => {
@@ -19,7 +21,7 @@ const App: React.FC = () => {
     const onLocationChange = () => {
       setPathname(window.location.pathname);
     };
-    window.addEventListener('popstate', onLocationChange); // This handles browser back/forward for /admin path
+    window.addEventListener('popstate', onLocationChange);
     return () => {
       window.removeEventListener('popstate', onLocationChange);
     };
@@ -32,6 +34,7 @@ const App: React.FC = () => {
   // Storefront Logic
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
+  const [settings, setSettings] = useState<AppSettings | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [currentView, setCurrentView] = useState<View>('home');
@@ -41,20 +44,20 @@ const App: React.FC = () => {
   
   const handleBackNavigation = () => window.history.back();
 
-  // Effect to handle browser history (back/forward buttons)
   useEffect(() => {
     const handlePopState = (event: PopStateEvent) => {
       const state = event.state || { view: 'home', productId: null };
       setCurrentView(state.view);
       setSelectedProductId(state.productId);
-      setSelectedVariant(null);
+      if (state.view !== 'detail') {
+          setSelectedVariant(null);
+      }
     };
 
     window.addEventListener('popstate', handlePopState);
     return () => window.removeEventListener('popstate', handlePopState);
   }, []);
 
-  // Effect to set initial view based on URL hash
   useEffect(() => {
     const hash = window.location.hash;
     const parts = hash.split('/');
@@ -65,23 +68,28 @@ const App: React.FC = () => {
     } else if (hash === '#about') {
       setCurrentView('about');
       history.replaceState({ view: 'about' }, '', '#about');
+    } else if (hash === '#checkout' && selectedProductId) {
+      setCurrentView('checkout');
+      history.replaceState({ view: 'checkout', productId: selectedProductId }, '', '#checkout');
     } else {
       setCurrentView('home');
       history.replaceState({ view: 'home' }, '', window.location.pathname);
     }
-  }, []);
+  }, [selectedProductId]);
 
   const loadData = useCallback(async () => {
     setError(null);
     try {
-      const [fetchedProducts, fetchedCategories] = await Promise.all([
+      const [fetchedProducts, fetchedCategories, fetchedSettings] = await Promise.all([
         productService.getProducts(),
-        categoryService.getCategories()
+        categoryService.getCategories(),
+        settingsService.getSettings()
       ]);
       setProducts(fetchedProducts);
       setCategories(fetchedCategories);
+      setSettings(fetchedSettings);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Gagal memuat produk.');
+      setError(err instanceof Error ? err.message : 'Gagal memuat data.');
       console.error(err);
     } finally {
       setLoading(false);
@@ -92,15 +100,10 @@ const App: React.FC = () => {
   useEffect(() => {
     loadData();
     const channel = supabase
-      .channel('public:products')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'products' }, (payload) => {
-        console.log('Perubahan terdeteksi di storefront!', payload);
-        loadData();
-      })
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'categories' }, (payload) => {
-        console.log('Perubahan kategori terdeteksi!', payload);
-        loadData();
-      })
+      .channel('public:all_changes')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'products' }, () => loadData())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'categories' }, () => loadData())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'settings' }, () => loadData())
       .subscribe();
     return () => {
       supabase.removeChannel(channel);
@@ -124,6 +127,9 @@ const App: React.FC = () => {
       state.productId = productId;
     } else if (view === 'about') {
       hash = '#about';
+    } else if (view === 'checkout') {
+      hash = '#checkout';
+      state.productId = selectedProductId;
     }
 
     if (window.location.hash !== hash || window.location.pathname !== '/') {
@@ -131,8 +137,8 @@ const App: React.FC = () => {
     }
     
     setCurrentView(view);
-    setSelectedProductId(productId || null);
-    setSelectedVariant(null);
+    if (productId) setSelectedProductId(productId);
+    if (view !== 'detail') setSelectedVariant(null);
     window.scrollTo(0, 0);
   };
 
@@ -144,6 +150,11 @@ const App: React.FC = () => {
 
   const navigateToHome = () => navigateTo('home');
   const navigateToAbout = () => navigateTo('about');
+  const navigateToCheckout = () => {
+    if (selectedProduct) {
+      navigateTo('checkout');
+    }
+  };
 
   const navigateToProductsSection = () => {
     navigateTo('home');
@@ -160,8 +171,9 @@ const App: React.FC = () => {
 
     switch (currentView) {
       case 'home': return <HomeView products={products} categories={categories} selectedCategory={selectedCategory} onSelectCategory={setSelectedCategory} onProductClick={handleProductClick} onGoProducts={navigateToProductsSection} />;
-      case 'detail': return selectedProduct && <DetailView product={selectedProduct} selectedVariant={selectedVariant} onVariantChange={setSelectedVariant} onBack={handleBackNavigation} />;
+      case 'detail': return selectedProduct && <DetailView product={selectedProduct} selectedVariant={selectedVariant} onVariantChange={setSelectedVariant} onBack={handleBackNavigation} onCheckout={navigateToCheckout} />;
       case 'about': return <AboutView onBack={handleBackNavigation} />;
+      case 'checkout': return selectedProduct && settings && <CheckoutView product={selectedProduct} selectedVariant={selectedVariant} onBack={handleBackNavigation} storeWhatsAppNumber={settings.whatsAppNumber} />;
       default: return <HomeView products={products} categories={categories} selectedCategory={selectedCategory} onSelectCategory={setSelectedCategory} onProductClick={handleProductClick} onGoProducts={navigateToProductsSection} />;
     }
   };
@@ -175,6 +187,7 @@ const App: React.FC = () => {
       <FloatingBottomNav 
         onHomeClick={navigateToHome} 
         onAboutClick={navigateToAbout}
+        onCheckoutClick={navigateToCheckout}
         activeProduct={currentView === 'detail' ? selectedProduct : null}
         activeVariant={currentView === 'detail' ? selectedVariant : null}
       />
