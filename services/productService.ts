@@ -3,13 +3,30 @@ import { Product } from '../types';
 import { supabase } from '../lib/supabaseClient';
 
 const getProducts = async (): Promise<Product[]> => {
-  const { data, error } = await supabase
+  // Upaya pertama: kueri dengan pengurutan 'position'
+  let { data, error } = await supabase
     .from('products')
     .select('*')
-    .limit(1000) // FIX: Menambahkan batas 1000 untuk memastikan semua produk diambil
+    .limit(1000)
     .order('position', { ascending: true, nullsFirst: false })
     .order('created_at', { ascending: false });
 
+  // Cek apakah error spesifik karena kolom 'position' tidak ada
+  if (error && (error.message.includes('column "position" does not exist') || error.message.includes("column products.position does not exist"))) {
+    console.warn("Retrying getProducts without 'position' ordering. The 'position' column seems to be missing.");
+    
+    // Upaya kedua: coba lagi kueri tanpa pengurutan 'position'
+    const retryResult = await supabase
+      .from('products')
+      .select('*')
+      .limit(1000)
+      .order('created_at', { ascending: false });
+      
+    data = retryResult.data;
+    error = retryResult.error;
+  }
+
+  // Tangani error lain (atau error dari upaya kedua)
   if (error) {
     console.error("Error fetching products:", error);
     throw new Error(`Tidak dapat mengambil data produk: ${error.message}`);
@@ -35,7 +52,6 @@ const getProducts = async (): Promise<Product[]> => {
       if (url.startsWith('http')) {
           try {
               const imageUrlObject = new URL(url);
-              // Opsi: Anda bisa menambahkan validasi hostname di sini jika perlu
               return url;
           } catch (e) {
               console.warn(`URL gambar tidak valid: ${url}`);
@@ -61,16 +77,13 @@ const getProducts = async (): Promise<Product[]> => {
             return [];
         }
         if (Array.isArray(category)) {
-            // Secara rekursif mem-parsing setiap item dan meratakannya menjadi satu array
             return category.flatMap(item => getCategoriesArray(item));
         }
         if (typeof category === 'string') {
             try {
-                // Coba parsing sebagai JSON terlebih dahulu, ini akan menangani "[\"Slingbag\"]"
                 const parsed = JSON.parse(category);
                 return getCategoriesArray(parsed);
             } catch (e) {
-                // Jika gagal, anggap sebagai string biasa atau format array postgres
                 let str = category.trim();
                 if (str.startsWith('{') && str.endsWith('}')) {
                     str = str.substring(1, str.length - 1);
@@ -84,7 +97,6 @@ const getProducts = async (): Promise<Product[]> => {
     const processedVariants = (p.variants || []).map((v: any) => ({
       ...v,
       imageUrl: buildFullUrl(v.imageUrl),
-      // Memastikan kompatibilitas ke belakang: jika isAvailable tidak ada, anggap true.
       isAvailable: v.isAvailable === false ? false : true,
     }));
     
@@ -128,14 +140,12 @@ const saveProduct = async (productToSave: Product): Promise<Product> => {
 };
 
 const deleteProduct = async (productId: string): Promise<void> => {
-  // 1. Ambil data produk untuk mendapatkan path gambar
   const { data: productData, error: fetchError } = await supabase
     .from('products')
     .select('imageUrls, variants')
     .eq('id', productId)
     .single();
 
-  // Jika produk tidak ditemukan (misalnya sudah dihapus), hentikan proses tanpa error.
   if (fetchError && fetchError.code === 'PGRST116') {
     console.warn(`Produk dengan ID ${productId} tidak ditemukan, mungkin sudah dihapus.`);
     return;
@@ -146,7 +156,6 @@ const deleteProduct = async (productId: string): Promise<void> => {
     throw new Error(`Gagal mengambil data produk untuk dihapus: ${fetchError.message}`);
   }
 
-  // 2. Kumpulkan semua path gambar yang terkait dengan produk
   const imagePathsToDelete: string[] = [];
   if (productData?.imageUrls && Array.isArray(productData.imageUrls)) {
     imagePathsToDelete.push(...productData.imageUrls.filter(p => p));
@@ -159,20 +168,16 @@ const deleteProduct = async (productId: string): Promise<void> => {
     });
   }
 
-  // 3. Hapus gambar dari Supabase Storage jika ada
   if (imagePathsToDelete.length > 0) {
     const { error: storageError } = await supabase.storage
       .from('store-images')
       .remove(imagePathsToDelete);
     
     if (storageError) {
-      // Catat error tapi jangan hentikan proses.
-      // Lebih baik menghapus record database daripada meninggalkan produk "zombie".
       console.error(`Gagal menghapus beberapa gambar dari storage untuk produk ${productId}. Lanjutkan menghapus record database.`, storageError);
     }
   }
 
-  // 4. Hapus record produk dari database
   const { error: deleteError } = await supabase
     .from('products')
     .delete()
