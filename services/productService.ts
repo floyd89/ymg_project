@@ -54,25 +54,25 @@ const getProducts = async (): Promise<Product[]> => {
     const finalUrls = sanitizedImageUrls(p.imageUrls).map(buildFullUrl).filter(Boolean);
 
     const getCategoriesArray = (category: any): string[] => {
+        if (!category) {
+            return [];
+        }
         if (Array.isArray(category)) {
-            return category;
+            // Secara rekursif mem-parsing setiap item dan meratakannya menjadi satu array
+            return category.flatMap(item => getCategoriesArray(item));
         }
         if (typeof category === 'string') {
-            // Menangani format string array dari PostgreSQL, cth: "{Cat A,"Cat B"}"
-            if (category.startsWith('{') && category.endsWith('}')) {
-                const content = category.substring(1, category.length - 1);
-                if (content === '') return []; // Menangani array kosong "{}"
-                // Pisahkan berdasarkan koma, lalu bersihkan spasi dan tanda kutip
-                return content.split(',').map(c => c.trim().replace(/"/g, ''));
+            let str = category.trim();
+            // Menangani format array teks PostgreSQL, cth: "{Slingbag,"Handbag"}"
+            if (str.startsWith('{') && str.endsWith('}')) {
+                str = str.substring(1, str.length - 1);
             }
-            // FIX: Menangani string yang dipisahkan koma atau string kategori tunggal
-            if (category.length > 0) {
-                return category.split(',').map(c => c.trim()).filter(Boolean);
-            }
+            // Sekarang kita seharusnya memiliki daftar yang dipisahkan koma.
+            // Hapus juga tanda kutip ganda yang mungkin tersisa.
+            return str.split(',').map(c => c.trim().replace(/"/g, '')).filter(Boolean);
         }
-        // Kembalikan array kosong untuk null, undefined, dll.
         return [];
-    }
+    };
 
     const processedVariants = (p.variants || []).map((v: any) => ({
       ...v,

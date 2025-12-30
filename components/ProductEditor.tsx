@@ -26,26 +26,23 @@ const ProductEditor: React.FC<ProductEditorProps> = ({ product, categories, onSa
 
   useEffect(() => {
     if (product) {
-        // Fungsi parsing yang kuat, memastikan data kategori selalu berupa array string
-        // sebelum diatur ke dalam state editor.
+        // Fungsi parsing rekursif yang kuat untuk membersihkan data kategori.
         const getCategoriesArray = (category: any): string[] => {
+            if (!category) {
+                return [];
+            }
             if (Array.isArray(category)) {
-                return category;
+                return category.flatMap(item => getCategoriesArray(item));
             }
             if (typeof category === 'string') {
-                if (category.startsWith('{') && category.endsWith('}')) {
-                    const content = category.substring(1, category.length - 1);
-                    if (content === '') return [];
-                    return content.split(',').map(c => c.trim().replace(/"/g, ''));
+                let str = category.trim();
+                if (str.startsWith('{') && str.endsWith('}')) {
+                    str = str.substring(1, str.length - 1);
                 }
-                // FIX KRITIS: Memisahkan string yang mengandung koma menjadi array.
-                // Ini memastikan "Tas, Wanita" menjadi ["Tas", "Wanita"].
-                if (category.length > 0) {
-                    return category.split(',').map(c => c.trim()).filter(Boolean);
-                }
+                return str.split(',').map(c => c.trim().replace(/"/g, '')).filter(Boolean);
             }
             return [];
-        }
+        };
 
         const initialData = {
             ...product,
