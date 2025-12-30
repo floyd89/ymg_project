@@ -197,6 +197,10 @@ const App: React.FC = () => {
     setTimeout(() => document.getElementById('products')?.scrollIntoView({ behavior: 'smooth' }), 100);
   };
   
+  const handleSelectVariant = () => {
+    document.getElementById('variant-selector')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  };
+  
   const cartItemCount = useMemo(() => cart.reduce((count, item) => count + item.quantity, 0), [cart]);
 
 
@@ -232,7 +236,6 @@ const App: React.FC = () => {
             handleAddToCart(selectedProduct, selectedVariant, 1);
             alert(`${selectedProduct.name} (${selectedVariant.colorName}) telah ditambahkan ke keranjang.`);
           } else if (selectedProduct && !selectedProduct.variants.length) {
-            // FIX: Replaced non-existent `colorHex` with `imageUrl` to match ProductVariant type.
             handleAddToCart(selectedProduct, {id: 'default', colorName: 'Default', imageUrl: ''}, 1);
             alert(`${selectedProduct.name} telah ditambahkan ke keranjang.`);
           }
@@ -241,11 +244,11 @@ const App: React.FC = () => {
           if (selectedProduct && selectedVariant) {
             handleBuyNow(selectedProduct, selectedVariant, 1);
           } else if (selectedProduct && !selectedProduct.variants.length) {
-            // FIX: Replaced non-existent `colorHex` with `imageUrl` to match ProductVariant type.
             handleBuyNow(selectedProduct, {id: 'default', colorName: 'Default', imageUrl: ''}, 1);
           }
         }}
         onGoToCart={navigateToCart}
+        onSelectVariantClick={handleSelectVariant}
         cartItemCount={cartItemCount}
         activeProduct={currentView === 'detail' ? selectedProduct : null}
         activeVariant={currentView === 'detail' ? selectedVariant : null}
