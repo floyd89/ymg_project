@@ -1,21 +1,26 @@
 
 import React, { useState, useMemo } from 'react';
-import { Product, ProductVariant } from '../types';
+import { CartItem } from '../types';
 import { formatCurrency } from '../utils/formatters';
 
 interface CheckoutViewProps {
-  product: Product;
-  selectedVariant: ProductVariant | null;
+  cart: CartItem[];
   onBack: () => void;
   storeWhatsAppNumber: string;
 }
 
-const CheckoutView: React.FC<CheckoutViewProps> = ({ product, selectedVariant, onBack, storeWhatsAppNumber }) => {
+const CheckoutView: React.FC<CheckoutViewProps> = ({ cart, onBack, storeWhatsAppNumber }) => {
   const [customerName, setCustomerName] = useState('');
   const [customerWhatsApp, setCustomerWhatsApp] = useState('');
   const [customerAddress, setCustomerAddress] = useState('');
 
-  const displayPrice = useMemo(() => selectedVariant?.price || product.price, [selectedVariant, product.price]);
+  const totalPrice = useMemo(() => {
+    return cart.reduce((total, item) => {
+      const priceString = item.variant.price || item.product.price;
+      const price = parseInt(priceString.replace(/\D/g, ''), 10) || 0;
+      return total + (price * item.quantity);
+    }, 0);
+  }, [cart]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -24,17 +29,28 @@ const CheckoutView: React.FC<CheckoutViewProps> = ({ product, selectedVariant, o
       return;
     }
 
-    let productDetails = `*Produk:* ${product.name}\n`;
-    if (selectedVariant) {
-      productDetails += `*Varian:* ${selectedVariant.colorName}\n`;
-    }
-    productDetails += `*Harga:* ${formatCurrency(displayPrice)}\n`;
+    const productDetails = cart.map(item => {
+      const price = formatCurrency(item.variant.price || item.product.price);
+      return `*Produk:* ${item.product.name}\n*Varian:* ${item.variant.colorName}\n*Jumlah:* ${item.quantity} pcs\n*Harga:* ${price}\n--------------------`;
+    }).join('\n');
+    
+    const totalPriceFormatted = formatCurrency(String(totalPrice));
 
-    const orderSummary = `Halo YMG Official Store, saya ingin memesan:\n\n${productDetails}\nBerikut adalah data pengiriman saya:\n*Nama Penerima:* ${customerName}\n*Nomor WhatsApp:* ${customerWhatsApp}\n*Alamat Lengkap:* ${customerAddress}\n\nMohon konfirmasi ketersediaan dan total biayanya. Terima kasih.`;
+    const orderSummary = `Halo YMG Official Store, saya ingin memesan:\n\n${productDetails}\n\n*Total Pesanan: ${totalPriceFormatted}*\n\nBerikut adalah data pengiriman saya:\n*Nama Penerima:* ${customerName}\n*Nomor WhatsApp:* ${customerWhatsApp}\n*Alamat Lengkap:* ${customerAddress}\n\nMohon konfirmasi ketersediaan dan total biayanya. Terima kasih.`;
     
     const encodedMessage = encodeURIComponent(orderSummary);
     window.open(`https://wa.me/${storeWhatsAppNumber}?text=${encodedMessage}`, '_blank');
   };
+  
+  if (cart.length === 0) {
+      return (
+        <div className="max-w-xl mx-auto text-center py-20">
+            <h2 className="text-xl font-bold">Keranjang Anda kosong</h2>
+            <p className="text-slate-500">Tidak ada item untuk di-checkout.</p>
+            <button onClick={onBack} className="mt-4 px-4 py-2 bg-slate-100 text-slate-800 rounded-lg text-sm font-bold hover:bg-slate-200">Kembali Belanja</button>
+        </div>
+      );
+  }
 
   return (
     <div className="max-w-xl mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-16">
@@ -47,22 +63,30 @@ const CheckoutView: React.FC<CheckoutViewProps> = ({ product, selectedVariant, o
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
           </svg>
         </div>
-        <span>Kembali</span>
+        <span>Kembali ke Keranjang</span>
       </button>
 
       <h1 className="text-3xl md:text-4xl font-black text-slate-900 tracking-tighter mb-6">Checkout</h1>
       
       {/* Order Summary */}
-      <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4 mb-8 flex items-center gap-4">
-        <img 
-          src={product.imageUrls?.[0] || 'https://via.placeholder.com/100'} 
-          alt={product.name}
-          className="w-20 h-20 rounded-lg object-cover bg-slate-100"
-        />
-        <div className="flex-grow">
-          <h3 className="font-bold text-slate-800">{product.name}</h3>
-          {selectedVariant && <p className="text-xs text-slate-500">Varian: {selectedVariant.colorName}</p>}
-          <p className="text-lg font-black text-slate-900 mt-1">{formatCurrency(displayPrice)}</p>
+      <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4 mb-8 space-y-3">
+        {cart.map(item => (
+            <div key={item.id} className="flex items-center gap-4 text-sm">
+                <img 
+                src={item.product.imageUrls?.[0] || 'https://via.placeholder.com/100'} 
+                alt={item.product.name}
+                className="w-12 h-12 rounded-lg object-cover bg-slate-100"
+                />
+                <div className="flex-grow">
+                    <p className="font-bold text-slate-800">{item.product.name} <span className="text-slate-500 font-medium">x{item.quantity}</span></p>
+                    <p className="text-xs text-slate-500">Varian: {item.variant.colorName}</p>
+                </div>
+                <p className="font-bold text-slate-900">{formatCurrency(item.variant.price || item.product.price)}</p>
+            </div>
+        ))}
+        <div className="flex justify-between items-center font-black text-slate-900 text-lg pt-3 border-t border-slate-200">
+            <span>Total</span>
+            <span>{formatCurrency(String(totalPrice))}</span>
         </div>
       </div>
 

@@ -8,11 +8,12 @@ interface DetailViewProps {
   selectedVariant: ProductVariant | null;
   onVariantChange: (variant: ProductVariant) => void;
   onBack: () => void;
-  onCheckout: () => void;
+  onAddToCart: (product: Product, variant: ProductVariant, quantity: number) => void;
 }
 
-const DetailView: React.FC<DetailViewProps> = ({ product, selectedVariant, onVariantChange, onBack, onCheckout }) => {
+const DetailView: React.FC<DetailViewProps> = ({ product, selectedVariant, onVariantChange, onBack, onAddToCart }) => {
   const [activeImageUrl, setActiveImageUrl] = useState<string | null>(null);
+  const [quantity, setQuantity] = useState(1);
 
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -22,12 +23,29 @@ const DetailView: React.FC<DetailViewProps> = ({ product, selectedVariant, onVar
     if (!selectedVariant && product.variants.length > 0) {
       onVariantChange(product.variants[0]);
     }
+    setQuantity(1); // Reset quantity when product changes
   }, [product, selectedVariant, onVariantChange]);
 
   const displayPrice = useMemo(() => selectedVariant?.price || product.price, [selectedVariant, product.price]);
   const hasVariants = product.variants.length > 0;
   const hasImages = product.imageUrls && product.imageUrls.length > 0;
   const isReadyToBuy = !hasVariants || !!selectedVariant;
+
+  const handleAddToCart = () => {
+    if (isReadyToBuy && selectedVariant) {
+      onAddToCart(product, selectedVariant, quantity);
+      alert(`${quantity} x ${product.name} (${selectedVariant.colorName}) telah ditambahkan ke keranjang.`);
+    } else if (isReadyToBuy && !hasVariants) {
+      // Handle products without variants, creating a dummy variant
+      const dummyVariant = { id: 'default', colorName: 'Default', colorHex: '' };
+      onAddToCart(product, dummyVariant, quantity);
+      alert(`${quantity} x ${product.name} telah ditambahkan ke keranjang.`);
+    }
+  };
+  
+  const handleQuantityChange = (amount: number) => {
+    setQuantity(prev => Math.max(1, prev + amount));
+  };
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -83,13 +101,21 @@ const DetailView: React.FC<DetailViewProps> = ({ product, selectedVariant, onVar
           </div>
           
           <div className="hidden md:block mt-auto pt-8 border-t border-slate-100">
+             <div className="flex items-center gap-4 mb-4">
+                <label className="text-[10px] font-black text-slate-900 uppercase tracking-widest">Jumlah</label>
+                <div className="flex items-center gap-2 bg-slate-100 rounded-full p-1">
+                    <button onClick={() => handleQuantityChange(-1)} className="w-8 h-8 bg-white rounded-full font-bold text-slate-600">-</button>
+                    <span className="font-bold text-sm w-8 text-center">{quantity}</span>
+                    <button onClick={() => handleQuantityChange(1)} className="w-8 h-8 bg-white rounded-full font-bold text-slate-600">+</button>
+                </div>
+             </div>
              <button
-                onClick={onCheckout}
+                onClick={handleAddToCart}
                 disabled={!isReadyToBuy}
                 className="w-full px-8 py-4 bg-slate-900 text-white rounded-2xl text-sm font-bold uppercase tracking-widest hover:bg-slate-800 transition-colors transform active:scale-95 shadow-lg shadow-slate-400/50 disabled:bg-slate-400 disabled:cursor-not-allowed flex items-center justify-center gap-3"
             >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" /></svg>
-                <span>{isReadyToBuy ? 'Beli Sekarang' : 'Pilih Varian Dulu'}</span>
+                <span>{isReadyToBuy ? 'Tambah ke Keranjang' : 'Pilih Varian Dulu'}</span>
             </button>
           </div>
         </div>

@@ -36,7 +36,14 @@ export interface AppSettings {
   telegramUrl?: string | null;
 }
 
-export type View = 'home' | 'detail' | 'about' | 'checkout';
+export type View = 'home' | 'detail' | 'about' | 'checkout' | 'cart';
+
+export interface CartItem {
+  id: string; // Composite key: `${productId}-${variantId}`
+  product: Product;
+  variant: ProductVariant;
+  quantity: number;
+}
 
 // Tipe data baru untuk manajemen kategori
 export interface Category {
