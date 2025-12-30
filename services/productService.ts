@@ -6,6 +6,7 @@ const getProducts = async (): Promise<Product[]> => {
   const { data, error } = await supabase
     .from('products')
     .select('*')
+    .limit(1000) // FIX: Menambahkan batas 1000 untuk memastikan semua produk diambil
     .order('position', { ascending: true, nullsFirst: false })
     .order('created_at', { ascending: false });
 
