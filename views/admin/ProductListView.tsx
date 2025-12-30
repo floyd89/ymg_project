@@ -75,7 +75,7 @@ const ProductListView: React.FC = () => {
       const errMsg = err instanceof Error ? err.message : '';
       if (errMsg.includes('invalid input syntax for type text[]') || errMsg.includes('malformed array literal')) {
         setSaveError('SCHEMA_MISMATCH_CATEGORY_ARRAY');
-      } else if (errMsg.includes('column "isActive" of relation "products" does not exist')) {
+      } else if (errMsg.includes("'isActive' column") || errMsg.includes('"isActive" column')) {
         setSaveError('SCHEMA_MISMATCH_ISACTIVE');
       } else if (errMsg.includes("Could not find the 'imageUrls' column")) {
         setSaveError('SCHEMA_MISMATCH_IMAGEURLS');
@@ -95,8 +95,8 @@ const ProductListView: React.FC = () => {
       // Revert on error
       setProducts(products.map(p => p.id === product.id ? { ...p, isActive: !newStatus } : p));
       const errMsg = err instanceof Error ? err.message : '';
-      if (errMsg.includes('column "isActive" of relation "products" does not exist')) {
-          setError('SCHEMA_MISMATCH_ISACTIVE'); // New error code
+      if (errMsg.includes("'isActive' column") || errMsg.includes('"isActive" column')) {
+          setError('SCHEMA_MISMATCH_ISACTIVE');
       } else {
           alert(errMsg || 'Gagal memperbarui status.');
       }
