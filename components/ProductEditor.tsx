@@ -27,7 +27,6 @@ const ProductEditor: React.FC<ProductEditorProps> = ({ product, categories, onSa
 
   useEffect(() => {
     if (product) {
-        // Fungsi parsing rekursif yang kuat untuk membersihkan data kategori.
         const getCategoriesArray = (category: any): string[] => {
             if (!category) {
                 return [];
@@ -36,11 +35,16 @@ const ProductEditor: React.FC<ProductEditorProps> = ({ product, categories, onSa
                 return category.flatMap(item => getCategoriesArray(item));
             }
             if (typeof category === 'string') {
-                let str = category.trim();
-                if (str.startsWith('{') && str.endsWith('}')) {
-                    str = str.substring(1, str.length - 1);
+                 try {
+                    const parsed = JSON.parse(category);
+                    return getCategoriesArray(parsed);
+                } catch (e) {
+                    let str = category.trim();
+                    if (str.startsWith('{') && str.endsWith('}')) {
+                        str = str.substring(1, str.length - 1);
+                    }
+                    return str.split(',').map(c => c.trim().replace(/"/g, '')).filter(Boolean);
                 }
-                return str.split(',').map(c => c.trim().replace(/"/g, '')).filter(Boolean);
             }
             return [];
         };
@@ -136,19 +140,28 @@ const ProductEditor: React.FC<ProductEditorProps> = ({ product, categories, onSa
     const { name, checked } = e.target;
     setProductData(prev => prev ? { ...prev, [name]: checked } : null);
   };
+  
    const handleCategoryChange = (categoryName: string, isChecked: boolean) => {
     setProductData(prev => {
         if (!prev) return null;
+        // Gunakan Set untuk secara otomatis menangani data duplikat dan
+        // memastikan daftar kategori selalu unik.
         const currentCategories = Array.isArray(prev.category) ? prev.category : [];
-        let newCategories: string[];
+        const categorySet = new Set(currentCategories);
+
         if (isChecked) {
-            newCategories = [...currentCategories, categoryName];
+            categorySet.add(categoryName); // `add` tidak akan melakukan apa-apa jika item sudah ada.
         } else {
-            newCategories = currentCategories.filter(cat => cat !== categoryName);
+            categorySet.delete(categoryName);
         }
+        
+        // Konversi kembali Set menjadi array untuk disimpan di state.
+        const newCategories = Array.from(categorySet);
+
         return { ...prev, category: newCategories };
     });
   };
+
   const handleVariantChange = (index: number, e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setProductData(prev => {

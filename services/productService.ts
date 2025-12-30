@@ -62,14 +62,18 @@ const getProducts = async (): Promise<Product[]> => {
             return category.flatMap(item => getCategoriesArray(item));
         }
         if (typeof category === 'string') {
-            let str = category.trim();
-            // Menangani format array teks PostgreSQL, cth: "{Slingbag,"Handbag"}"
-            if (str.startsWith('{') && str.endsWith('}')) {
-                str = str.substring(1, str.length - 1);
+            try {
+                // Coba parsing sebagai JSON terlebih dahulu, ini akan menangani "[\"Slingbag\"]"
+                const parsed = JSON.parse(category);
+                return getCategoriesArray(parsed);
+            } catch (e) {
+                // Jika gagal, anggap sebagai string biasa atau format array postgres
+                let str = category.trim();
+                if (str.startsWith('{') && str.endsWith('}')) {
+                    str = str.substring(1, str.length - 1);
+                }
+                return str.split(',').map(c => c.trim().replace(/"/g, '')).filter(Boolean);
             }
-            // Sekarang kita seharusnya memiliki daftar yang dipisahkan koma.
-            // Hapus juga tanda kutip ganda yang mungkin tersisa.
-            return str.split(',').map(c => c.trim().replace(/"/g, '')).filter(Boolean);
         }
         return [];
     };
