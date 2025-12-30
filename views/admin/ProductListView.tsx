@@ -73,7 +73,7 @@ const ProductListView: React.FC = () => {
       alert('Produk berhasil disimpan!');
     } catch (err) {
       const errMsg = err instanceof Error ? err.message : '';
-      if (errMsg.includes('column "sizes" of relation "products" does not exist')) {
+      if (errMsg.includes("'sizes' column") || errMsg.includes('"sizes" column')) {
         setSaveError('SCHEMA_MISMATCH_SIZES_JSON');
       } else if (errMsg.includes('column "availableSizes" of relation "products" does not exist')) {
         setSaveError('SCHEMA_MISMATCH_AVAILABLE_SIZES');
