@@ -203,13 +203,23 @@ const updateProductStatus = async (productId: string, isActive: boolean): Promis
 };
 
 const updateProductOrder = async (orderedProducts: {id: string, position: number}[]): Promise<void> => {
-    const { error } = await supabase
-        .from('products')
-        .upsert(orderedProducts);
-    
-    if (error) {
-        console.error("Error updating product order:", error);
-        throw new Error(`Gagal menyimpan urutan produk: ${error.message}`);
+    // Menggunakan serangkaian operasi 'update' individual yang dijalankan secara paralel.
+    // Ini lebih aman daripada 'upsert' dengan data parsial karena secara eksplisit
+    // hanya memperbarui kolom 'position' dan tidak akan mencoba menyisipkan baris baru,
+    // sehingga menghindari error 'NOT NULL constraint' jika ada ketidaksesuaian ID.
+    const updatePromises = orderedProducts.map(p =>
+        supabase
+            .from('products')
+            .update({ position: p.position })
+            .eq('id', p.id)
+    );
+
+    const results = await Promise.all(updatePromises);
+    const firstErrorResult = results.find(result => result.error);
+
+    if (firstErrorResult) {
+        console.error("Error updating product order:", firstErrorResult.error);
+        throw new Error(`Gagal menyimpan urutan produk: ${firstErrorResult.error!.message}`);
     }
 }
 
