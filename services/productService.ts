@@ -23,6 +23,7 @@ const getProducts = async (): Promise<Product[]> => {
         highlights: p.highlights || [],
         imageUrls: Array.isArray(p.imageUrls) ? p.imageUrls : [],
         isActive: p.isActive === null || p.isActive === undefined ? true : p.isActive,
+        category: Array.isArray(p.category) ? p.category : [],
       }));
   }
   const correctHostname = new URL(supabaseUrlString).hostname;
@@ -57,8 +58,20 @@ const getProducts = async (): Promise<Product[]> => {
         }
     }).filter(Boolean); 
 
+    const getCategoriesArray = (category: any): string[] => {
+        if (Array.isArray(category)) {
+            return category;
+        }
+        if (typeof category === 'string' && category.length > 0) {
+            // Ini menangani kasus jika kolom DB masih berupa `text`
+            return [category];
+        }
+        return [];
+    }
+
     return {
       ...p,
+      category: getCategoriesArray(p.category),
       variants: p.variants || [],
       highlights: p.highlights || [],
       imageUrls: finalUrls,

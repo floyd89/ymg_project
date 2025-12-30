@@ -6,6 +6,7 @@ import SetupNotice from './admin/SetupNotice';
 import SchemaNotice from './admin/SchemaNotice';
 import { supabase } from '../lib/supabaseClient';
 import IsActiveSchemaNotice from './admin/IsActiveSchemaNotice';
+import MultiCategorySchemaNotice from './admin/MultiCategorySchemaNotice';
 
 interface ProductEditorProps {
   product: Product | null;
@@ -28,11 +29,11 @@ const ProductEditor: React.FC<ProductEditorProps> = ({ product, categories, onSa
       const initialData = {
           ...product,
           imageUrls: Array.isArray(product.imageUrls) ? product.imageUrls : [],
-          category: product.category || (categories.length > 0 ? categories[0].name : ''),
+          category: Array.isArray(product.category) ? product.category : [],
       };
       setProductData(JSON.parse(JSON.stringify(initialData)));
     }
-  }, [product, categories]);
+  }, [product]);
 
   const getDisplayUrl = (path: string): string => {
     if (!path || path.startsWith('http') || path.startsWith('data:')) {
@@ -55,17 +56,14 @@ const ProductEditor: React.FC<ProductEditorProps> = ({ product, categories, onSa
     filesToUpload.forEach(file => {
         const tempId = `preview-${file.name}-${Date.now()}`;
 
-        // 1. Tampilkan pratinjau lokal secara instan
         fileToBase64(file).then(base64 => {
             setImagePreviews(prev => ({ ...prev, [tempId]: base64 }));
         });
         
-        // 2. Mulai proses unggah di latar belakang
         setIsUploading(prev => ({ ...prev, [tempId]: true }));
         uploadImage(file)
             .then(filePath => {
                 setUploadError(null);
-                // 3. Setelah berhasil, pindahkan dari pratinjau ke data produk
                 setProductData(prev => prev ? { ...prev, imageUrls: [...prev.imageUrls, filePath] } : null);
             })
             .catch(error => {
@@ -73,7 +71,6 @@ const ProductEditor: React.FC<ProductEditorProps> = ({ product, categories, onSa
                 else alert(error.message || `Gagal mengunggah ${file.name}.`);
             })
             .finally(() => {
-                // 4. Hapus dari status pratinjau dan unggahan
                 setImagePreviews(prev => {
                     const newPreviews = { ...prev };
                     delete newPreviews[tempId];
@@ -89,14 +86,26 @@ const ProductEditor: React.FC<ProductEditorProps> = ({ product, categories, onSa
   };
   
   const removeImage = (index: number) => setProductData(prev => prev ? { ...prev, imageUrls: prev.imageUrls.filter((_, i) => i !== index) } : null);
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
-    let finalValue: string | number = value;
-    setProductData(prev => prev ? { ...prev, [name]: finalValue } : null);
+    setProductData(prev => prev ? { ...prev, [name]: value } : null);
   };
    const handleToggleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, checked } = e.target;
     setProductData(prev => prev ? { ...prev, [name]: checked } : null);
+  };
+   const handleCategoryChange = (categoryName: string, isChecked: boolean) => {
+    setProductData(prev => {
+        if (!prev) return null;
+        const currentCategories = Array.isArray(prev.category) ? prev.category : [];
+        let newCategories: string[];
+        if (isChecked) {
+            newCategories = [...currentCategories, categoryName];
+        } else {
+            newCategories = currentCategories.filter(cat => cat !== categoryName);
+        }
+        return { ...prev, category: newCategories };
+    });
   };
   const handleVariantChange = (index: number, e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -126,8 +135,8 @@ const ProductEditor: React.FC<ProductEditorProps> = ({ product, categories, onSa
         alert("Unggah setidaknya satu foto.");
         return;
       }
-      if (!productData.category) {
-        alert("Pilih kategori produk.");
+      if (!productData.category || productData.category.length === 0) {
+        alert("Pilih setidaknya satu kategori produk.");
         return;
       }
       onSave(productData);
@@ -152,6 +161,7 @@ const ProductEditor: React.FC<ProductEditorProps> = ({ product, categories, onSa
       {uploadError === 'BUCKET_NOT_FOUND' && <SetupNotice onDismiss={() => setUploadError(null)} />}
       {saveError === 'SCHEMA_MISMATCH_IMAGEURLS' && <SchemaNotice onDismiss={onDismissSaveError} />}
       {saveError === 'SCHEMA_MISMATCH_ISACTIVE' && <IsActiveSchemaNotice onDismiss={onDismissSaveError} />}
+      {saveError === 'SCHEMA_MISMATCH_CATEGORY_ARRAY' && <MultiCategorySchemaNotice onDismiss={onDismissSaveError} />}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div className="lg:col-span-2 space-y-6">
@@ -210,12 +220,27 @@ const ProductEditor: React.FC<ProductEditorProps> = ({ product, categories, onSa
                     </div>
                     <div>
                         <label className="text-xs font-bold text-slate-500">Kategori</label>
-                        <select name="category" value={productData.category} onChange={handleChange} required className="w-full p-3 mt-1 bg-slate-50 rounded-lg border border-slate-200 font-bold">
-                            <option value="" disabled>Pilih Kategori</option>
+                        <div className="mt-1 p-3 bg-slate-50 rounded-lg border border-slate-200 grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-2">
                             {categories.map(cat => (
-                                <option key={cat.id} value={cat.name}>{cat.name}</option>
+                                <div key={cat.id} className="relative flex items-start">
+                                    <div className="flex h-6 items-center">
+                                        <input
+                                            id={`category-checkbox-${cat.id}`}
+                                            name={`category-${cat.name}`}
+                                            type="checkbox"
+                                            checked={productData.category.includes(cat.name)}
+                                            onChange={e => handleCategoryChange(cat.name, e.target.checked)}
+                                            className="h-4 w-4 rounded border-slate-300 text-slate-900 focus:ring-slate-900"
+                                        />
+                                    </div>
+                                    <div className="ml-3 text-sm leading-6">
+                                        <label htmlFor={`category-checkbox-${cat.id}`} className="font-medium text-slate-900 cursor-pointer">
+                                            {cat.name}
+                                        </label>
+                                    </div>
+                                </div>
                             ))}
-                        </select>
+                        </div>
                          {categories.length === 0 && <p className="text-xs text-red-500 mt-1">Belum ada kategori. Tambahkan di halaman Kategori.</p>}
                     </div>
                 </div>

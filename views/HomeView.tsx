@@ -20,7 +20,7 @@ const HomeView: React.FC<HomeViewProps> = ({ products, categories, selectedCateg
   const filteredProducts = useMemo(() => {
     if (!products) return [];
     return products.filter(product => {
-      const matchesCategory = selectedCategory === 'Semua' || product.category === selectedCategory;
+      const matchesCategory = selectedCategory === 'Semua' || (Array.isArray(product.category) && product.category.includes(selectedCategory));
       const matchesSearch = !searchTerm || product.name.toLowerCase().includes(searchTerm.toLowerCase());
       return matchesCategory && matchesSearch;
     });

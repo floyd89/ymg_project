@@ -7,6 +7,7 @@ import ProductEditor from '../../components/ProductEditor';
 import { supabase } from '../../lib/supabaseClient';
 import { formatCurrency } from '../../utils/formatters';
 import IsActiveSchemaNotice from '../../components/admin/IsActiveSchemaNotice';
+import MultiCategorySchemaNotice from '../../components/admin/MultiCategorySchemaNotice';
 
 const ProductListView: React.FC = () => {
   const [products, setProducts] = useState<Product[]>([]);
@@ -48,7 +49,7 @@ const ProductListView: React.FC = () => {
   const filteredProducts = useMemo(() => {
     return products.filter(p => {
       const matchSearch = p.name.toLowerCase().includes(searchTerm.toLowerCase());
-      const matchCategory = categoryFilter === 'all' || p.category === categoryFilter;
+      const matchCategory = categoryFilter === 'all' || (Array.isArray(p.category) && p.category.includes(categoryFilter));
       return matchSearch && matchCategory;
     });
   }, [products, searchTerm, categoryFilter]);
@@ -57,7 +58,7 @@ const ProductListView: React.FC = () => {
 
   const handleAddNew = () => {
     const newProductTemplate: Product = {
-      id: `new-product-${Date.now()}`, name: '', category: categories[0]?.name || '', price: '',
+      id: `new-product-${Date.now()}`, name: '', category: [], price: '',
       fullDescription: '', highlights: [], imageUrls: [], variants: [], isActive: false,
     };
     setEditingProduct(newProductTemplate);
@@ -72,7 +73,9 @@ const ProductListView: React.FC = () => {
       alert('Produk berhasil disimpan!');
     } catch (err) {
       const errMsg = err instanceof Error ? err.message : '';
-      if (errMsg.includes('column "isActive" of relation "products" does not exist')) {
+      if (errMsg.includes('invalid input syntax for type text[]') || errMsg.includes('malformed array literal')) {
+        setSaveError('SCHEMA_MISMATCH_CATEGORY_ARRAY');
+      } else if (errMsg.includes('column "isActive" of relation "products" does not exist')) {
         setSaveError('SCHEMA_MISMATCH_ISACTIVE');
       } else if (errMsg.includes("Could not find the 'imageUrls' column")) {
         setSaveError('SCHEMA_MISMATCH_IMAGEURLS');
@@ -138,6 +141,7 @@ const ProductListView: React.FC = () => {
       </div>
       
       {error === 'SCHEMA_MISMATCH_ISACTIVE' && <IsActiveSchemaNotice onDismiss={() => setError(null)} />}
+      {saveError === 'SCHEMA_MISMATCH_CATEGORY_ARRAY' && <MultiCategorySchemaNotice onDismiss={() => setSaveError(null)} />}
 
 
       <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm mt-6">
@@ -171,7 +175,7 @@ const ProductListView: React.FC = () => {
                             <img src={p.imageUrls?.[0] || 'https://via.placeholder.com/100'} alt={p.name} className="w-10 h-10 rounded-md object-cover bg-slate-100" />
                             <div>
                                 {p.name}
-                                <p className="font-normal text-xs text-slate-400">{p.category}</p>
+                                <p className="font-normal text-xs text-slate-400 max-w-[200px] truncate">{p.category.join(', ')}</p>
                             </div>
                         </td>
                         <td className="px-6 py-4 text-slate-600 font-bold">{formatCurrency(p.price)}</td>
