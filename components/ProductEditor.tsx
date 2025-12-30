@@ -26,12 +26,31 @@ const ProductEditor: React.FC<ProductEditorProps> = ({ product, categories, onSa
 
   useEffect(() => {
     if (product) {
-      const initialData = {
-          ...product,
-          imageUrls: Array.isArray(product.imageUrls) ? product.imageUrls : [],
-          category: Array.isArray(product.category) ? product.category : [],
-      };
-      setProductData(JSON.parse(JSON.stringify(initialData)));
+        // Fungsi parsing yang kuat, memastikan data kategori selalu berupa array string
+        // sebelum diatur ke dalam state editor.
+        const getCategoriesArray = (category: any): string[] => {
+            if (Array.isArray(category)) {
+                return category;
+            }
+            if (typeof category === 'string') {
+                if (category.startsWith('{') && category.endsWith('}')) {
+                    const content = category.substring(1, category.length - 1);
+                    if (content === '') return [];
+                    return content.split(',').map(c => c.trim().replace(/"/g, ''));
+                }
+                if (category.length > 0) {
+                    return [category];
+                }
+            }
+            return [];
+        }
+
+        const initialData = {
+            ...product,
+            imageUrls: Array.isArray(product.imageUrls) ? product.imageUrls : [],
+            category: getCategoriesArray(product.category),
+        };
+        setProductData(JSON.parse(JSON.stringify(initialData)));
     }
   }, [product]);
 
