@@ -7,6 +7,7 @@ import SchemaNotice from './admin/SchemaNotice';
 import { supabase } from '../lib/supabaseClient';
 import IsActiveSchemaNotice from './admin/IsActiveSchemaNotice';
 import MultiCategorySchemaNotice from './admin/MultiCategorySchemaNotice';
+import SizeSchemaNotice from './admin/SizeSchemaNotice';
 import { formatCurrency, unformatCurrency } from '../utils/formatters';
 
 interface ProductEditorProps {
@@ -225,6 +226,7 @@ const ProductEditor: React.FC<ProductEditorProps> = ({ product, categories, onSa
       {saveError === 'SCHEMA_MISMATCH_IMAGEURLS' && <SchemaNotice onDismiss={onDismissSaveError} />}
       {saveError === 'SCHEMA_MISMATCH_ISACTIVE' && <IsActiveSchemaNotice onDismiss={onDismissSaveError} />}
       {saveError === 'SCHEMA_MISMATCH_CATEGORY_ARRAY' && <MultiCategorySchemaNotice onDismiss={onDismissSaveError} />}
+      {saveError === 'SCHEMA_MISMATCH_SIZE' && <SizeSchemaNotice onDismiss={onDismissSaveError} />}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div className="lg:col-span-2 space-y-6">
@@ -233,6 +235,7 @@ const ProductEditor: React.FC<ProductEditorProps> = ({ product, categories, onSa
             <div className="space-y-4">
                 <input type="text" name="name" value={productData.name} onChange={handleChange} placeholder="Nama Produk" required className="w-full p-3 bg-slate-50 rounded-lg border border-slate-200 font-bold"/>
                 <textarea name="fullDescription" value={productData.fullDescription} onChange={handleChange} placeholder="Deskripsi Lengkap" required rows={5} className="w-full p-3 bg-slate-50 rounded-lg border border-slate-200 font-medium text-sm" />
+                <textarea name="size" value={productData.size || ''} onChange={handleChange} placeholder="Detail Ukuran (opsional), cth: P: 30cm, L: 15cm, T: 45cm" rows={2} className="w-full p-3 bg-slate-50 rounded-lg border border-slate-200 font-medium text-sm" />
             </div>
           </div>
           <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">

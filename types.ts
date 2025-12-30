@@ -15,6 +15,7 @@ export interface Product {
   highlights: string[];
   imageUrls: string[]; 
   variants: ProductVariant[];
+  size?: string; // Opsional, untuk dimensi seperti PxLxT
   isActive: boolean;
 }
 

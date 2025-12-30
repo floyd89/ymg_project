@@ -118,6 +118,13 @@ const DetailView: React.FC<DetailViewProps> = ({ product, selectedVariant, onVar
             </div>
           )}
           
+          {product.size && (
+            <div className="mb-6 animate-view-enter">
+                <h3 className="text-[10px] font-black text-slate-900 uppercase tracking-widest mb-2">Ukuran & Dimensi</h3>
+                <p className="text-slate-500 leading-relaxed text-sm font-medium whitespace-pre-wrap">{product.size}</p>
+            </div>
+          )}
+
           <div className="mb-8">
             <p className="text-slate-500 leading-relaxed text-sm md:text-base font-medium whitespace-pre-wrap">{product.fullDescription}</p>
           </div>

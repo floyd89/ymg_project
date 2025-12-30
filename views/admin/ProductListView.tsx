@@ -59,7 +59,7 @@ const ProductListView: React.FC = () => {
   const handleAddNew = () => {
     const newProductTemplate: Product = {
       id: `new-product-${Date.now()}`, name: '', category: [], price: '',
-      fullDescription: '', highlights: [], imageUrls: [], variants: [], isActive: false,
+      fullDescription: '', highlights: [], imageUrls: [], variants: [], isActive: false, size: '',
     };
     setEditingProduct(newProductTemplate);
   };
@@ -73,7 +73,9 @@ const ProductListView: React.FC = () => {
       alert('Produk berhasil disimpan!');
     } catch (err) {
       const errMsg = err instanceof Error ? err.message : '';
-      if (errMsg.includes('invalid input syntax for type text[]') || errMsg.includes('malformed array literal')) {
+      if (errMsg.includes('column "size" of relation "products" does not exist')) {
+        setSaveError('SCHEMA_MISMATCH_SIZE');
+      } else if (errMsg.includes('invalid input syntax for type text[]') || errMsg.includes('malformed array literal')) {
         setSaveError('SCHEMA_MISMATCH_CATEGORY_ARRAY');
       } else if (errMsg.includes("'isActive' column") || errMsg.includes('"isActive" column')) {
         setSaveError('SCHEMA_MISMATCH_ISACTIVE');
