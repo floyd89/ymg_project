@@ -4,7 +4,6 @@ import { settingsService } from '../../services/settingsService';
 import { bannerService } from '../../services/bannerService';
 import { AppSettings, Banner } from '../../types';
 import { uploadImage } from '../../utils/imageConverter';
-import AdminNotice from '../../components/admin/AdminNotice';
 import SetupNotice from '../../components/admin/SetupNotice';
 import SettingsSchemaNotice from '../../components/admin/SettingsSchemaNotice';
 
@@ -119,8 +118,6 @@ const SettingsView: React.FC = () => {
         <h1 className="text-3xl font-black text-slate-900">Pengaturan Toko</h1>
         <p className="text-slate-500 mt-1">Atur informasi umum dan tampilan toko Anda.</p>
       </div>
-      
-      <AdminNotice />
       
       {uploadError === 'BUCKET_NOT_FOUND' && <SetupNotice onDismiss={() => setUploadError(null)} />}
       {saveError === 'SCHEMA_MISMATCH_SETTINGS' && <SettingsSchemaNotice onDismiss={() => setSaveError(null)} />}
