@@ -3,9 +3,10 @@ import React, { useState, useEffect } from 'react';
 import { settingsService } from '../../services/settingsService';
 import { bannerService } from '../../services/bannerService';
 import { AppSettings, Banner } from '../../types';
-import { uploadImage } from '../../utils/imageConverter';
+import { uploadImage, fileToBase64 } from '../../utils/imageConverter';
 import SetupNotice from '../../components/admin/SetupNotice';
 import SettingsSchemaNotice from '../../components/admin/SettingsSchemaNotice';
+import { supabase } from '../../lib/supabaseClient';
 
 const SettingsView: React.FC = () => {
   const [settings, setSettings] = useState<AppSettings>({ whatsAppNumber: '' });
@@ -35,6 +36,14 @@ const SettingsView: React.FC = () => {
     };
     loadData();
   }, []);
+
+  const getDisplayUrl = (path: string): string => {
+    if (!path || path.startsWith('http') || path.startsWith('data:')) {
+      return path;
+    }
+    const { data } = supabase.storage.from('store-images').getPublicUrl(path);
+    return data ? data.publicUrl : '';
+  };
 
   const handleSettingsChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -82,25 +91,40 @@ const SettingsView: React.FC = () => {
   };
   
   const handleBannerImageChange = async (index: number, file: File | null) => {
-      if (!file) return;
-      const uploadKey = `banner-${index}`;
-      setIsUploading(prev => ({...prev, [uploadKey]: true}));
-      try {
-        const imageUrl = await uploadImage(file);
-        const newBanners = [...banners];
-        newBanners[index].imgUrl = imageUrl;
-        setBanners(newBanners);
-        setUploadError(null);
-      } catch (error) {
-          if (error instanceof Error && error.message.includes('Bucket not found')) {
-              setUploadError('BUCKET_NOT_FOUND');
-          } else {
-              console.error("Gagal mengunggah gambar:", error);
-              alert("Gagal memproses gambar. Pastikan bucket storage Anda 'store-images' sudah publik.");
-          }
-      } finally {
-        setIsUploading(prev => ({...prev, [uploadKey]: false}));
-      }
+    if (!file) return;
+    const uploadKey = `banner-${index}`;
+    setIsUploading(prev => ({...prev, [uploadKey]: true}));
+
+    try {
+      // Step 1: Generate and set local preview
+      const base64Preview = await fileToBase64(file);
+      setBanners(currentBanners => {
+          const newBanners = [...currentBanners];
+          newBanners[index] = { ...newBanners[index], imgUrl: base64Preview };
+          return newBanners;
+      });
+
+      // Step 2: Upload image in the background
+      const filePath = await uploadImage(file);
+      
+      // Step 3: Update state with permanent path from Supabase
+      setBanners(currentBanners => {
+          const newBanners = [...currentBanners];
+          newBanners[index] = { ...newBanners[index], imgUrl: filePath };
+          return newBanners;
+      });
+
+      setUploadError(null);
+    } catch (error) {
+        if (error instanceof Error && error.message.includes('Bucket not found')) {
+            setUploadError('BUCKET_NOT_FOUND');
+        } else {
+            console.error("Gagal mengunggah gambar:", error);
+            alert("Gagal memproses gambar. Pastikan bucket storage Anda 'store-images' sudah publik.");
+        }
+    } finally {
+      setIsUploading(prev => ({...prev, [uploadKey]: false}));
+    }
   };
 
   const handleSaveBanners = async () => {
@@ -156,7 +180,7 @@ const SettingsView: React.FC = () => {
         <div className="bg-white p-6 md:p-8 rounded-2xl border border-slate-200">
           <div className="max-w-md space-y-6">
             <div className="flex flex-col sm:flex-row items-start sm:items-center gap-6">
-                <img src={settings.storeLogoUrl || 'https://via.placeholder.com/100'} alt="Logo Toko" className="w-24 h-24 object-cover rounded-full bg-slate-100" />
+                <img src={getDisplayUrl(settings.storeLogoUrl || '') || 'https://via.placeholder.com/100'} alt="Logo Toko" className="w-24 h-24 object-cover rounded-full bg-slate-100" />
                 <div>
                   <label htmlFor="logo-upload" className="text-sm font-bold text-slate-700">Logo Toko</label>
                   <p className="text-xs text-slate-400 mb-2">Rekomendasi ukuran: 512x512 piksel.</p>
@@ -205,7 +229,7 @@ const SettingsView: React.FC = () => {
              {banners.map((banner, index) => (
                 <div key={banner.id} className="grid grid-cols-1 md:grid-cols-3 gap-6 p-4 border border-slate-200 rounded-xl">
                     <div className="flex flex-col items-start">
-                         <img src={banner.imgUrl} alt="Banner preview" className="w-full aspect-video object-cover rounded-lg mb-2 bg-slate-100" />
+                         <img src={getDisplayUrl(banner.imgUrl)} alt="Banner preview" className="w-full aspect-video object-cover rounded-lg mb-2 bg-slate-100" />
                          <input type="file" accept="image/*" id={`banner-upload-${index}`} className="hidden" onChange={(e) => handleBannerImageChange(index, e.target.files?.[0] ?? null)} />
                          <label htmlFor={`banner-upload-${index}`} className="text-xs font-bold text-slate-500 hover:text-slate-900 cursor-pointer">{isUploading[`banner-${index}`] ? 'Mengunggah...' : 'Ubah Gambar'}</label>
                          <p className="text-xs text-slate-400 mt-1">Rekomendasi ukuran: 1200x600 piksel.</p>
