@@ -37,7 +37,15 @@ export interface AppSettings {
 
 export type View = 'home' | 'detail' | 'about' | 'checkout';
 
-// Tipe data baru untuk manajemen pesanan
+// Tipe data baru untuk manajemen kategori
+export interface Category {
+  id: number;
+  name: string;
+  created_at?: string;
+}
+
+// FIX: Add missing Order and OrderItem types based on usage in services/orderService.ts and views/admin/OrderListView.tsx.
+// Tipe data untuk manajemen pesanan
 export interface OrderItem {
   productId: string;
   productName: string;
@@ -45,18 +53,13 @@ export interface OrderItem {
   price: number;
 }
 
+export type OrderStatus = 'Diproses' | 'Dikirim' | 'Selesai' | 'Dibatalkan';
+
 export interface Order {
   id: string;
   customerName: string;
-  date: string; // ISO string date
+  date: string;
   total: number;
-  status: 'Diproses' | 'Dikirim' | 'Selesai' | 'Dibatalkan';
+  status: OrderStatus;
   items: OrderItem[];
-}
-
-// Tipe data baru untuk manajemen kategori
-export interface Category {
-  id: number;
-  name: string;
-  created_at?: string;
 }

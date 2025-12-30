@@ -1,6 +1,6 @@
-
 import React, { useState, useEffect, useMemo } from 'react';
-import { Order } from '../../types';
+// FIX: Import Order and OrderStatus to correctly type component state and props.
+import { Order, OrderStatus } from '../../types';
 import { orderService } from '../../services/orderService';
 import { formatCurrency } from '../../utils/formatters';
 
@@ -8,7 +8,8 @@ const OrderListView: React.FC = () => {
   const [orders, setOrders] = useState<Order[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState<'all' | Order['status']>('all');
+  // FIX: Use the explicit OrderStatus type for the filter state.
+  const [statusFilter, setStatusFilter] = useState<'all' | OrderStatus>('all');
 
   useEffect(() => {
     const loadOrders = async () => {
@@ -28,9 +29,10 @@ const OrderListView: React.FC = () => {
     });
   }, [orders, searchTerm, statusFilter]);
 
-  const StatusBadge: React.FC<{ status: Order['status'] }> = ({ status }) => {
+  // FIX: Use OrderStatus for the status prop and explicitly type the statusClasses object.
+  const StatusBadge: React.FC<{ status: OrderStatus }> = ({ status }) => {
     const baseClasses = "px-2 py-1 text-[10px] font-black rounded-full";
-    const statusClasses = {
+    const statusClasses: Record<OrderStatus, string> = {
       'Diproses': 'bg-blue-100 text-blue-800',
       'Dikirim': 'bg-yellow-100 text-yellow-800',
       'Selesai': 'bg-emerald-100 text-emerald-800',
