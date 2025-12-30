@@ -82,15 +82,22 @@ const getProducts = async (): Promise<Product[]> => {
     const processedVariants = (p.variants || []).map((v: any) => ({
       ...v,
       imageUrl: buildFullUrl(v.imageUrl),
+      // Memastikan kompatibilitas ke belakang: jika isAvailable tidak ada, anggap true.
+      isAvailable: v.isAvailable === false ? false : true,
+    }));
+    
+    const processedSizes = (p.sizes || []).map((s: any) => ({
+        ...s,
+        isAvailable: s.isAvailable === false ? false : true,
     }));
 
     return {
       ...p,
       category: getCategoriesArray(p.category),
       variants: processedVariants,
+      sizes: processedSizes,
       highlights: p.highlights || [],
       imageUrls: finalUrls,
-      sizes: p.sizes || [],
       isActive: p.isActive === null || p.isActive === undefined ? true : p.isActive,
     };
   });

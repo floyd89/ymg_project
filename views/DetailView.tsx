@@ -42,14 +42,14 @@ const DetailView: React.FC<DetailViewProps> = ({ product, selectedVariant, onVar
 
   const handleAddToCart = () => {
     if (!isReadyForCart) return;
-    const variant = selectedVariant || { id: 'default', colorName: 'Default', imageUrl: '' };
+    const variant = selectedVariant || { id: 'default', colorName: 'Default', imageUrl: '', isAvailable: true };
     onAddToCart(product, variant, quantity, selectedSize);
     alert(`${quantity} x ${product.name} (${variant.colorName} / ${selectedSize}) telah ditambahkan ke keranjang.`);
   };
 
   const handleBuyNow = () => {
     if (!isReadyForCart) return;
-    const variant = selectedVariant || { id: 'default', colorName: 'Default', imageUrl: '' };
+    const variant = selectedVariant || { id: 'default', colorName: 'Default', imageUrl: '', isAvailable: true };
     onBuyNow(product, variant, quantity, selectedSize);
   };
   
@@ -97,11 +97,16 @@ const DetailView: React.FC<DetailViewProps> = ({ product, selectedVariant, onVar
               </h3>
               <div className="flex flex-wrap items-start gap-4">
                 {product.variants.map(variant => (
-                  <button key={variant.id} onClick={() => onVariantChange(variant)} className="text-center group" aria-label={`Pilih varian ${variant.colorName}`}>
-                      <div className={`w-20 h-20 rounded-lg overflow-hidden border-2 transition-all group-hover:border-slate-400 ${selectedVariant?.id === variant.id ? 'border-slate-900' : 'border-slate-200'}`}>
+                  <button key={variant.id} onClick={() => onVariantChange(variant)} className="text-center group relative" aria-label={`Pilih varian ${variant.colorName}`} disabled={!variant.isAvailable}>
+                      <div className={`w-20 h-20 rounded-lg overflow-hidden border-2 transition-all group-hover:border-slate-400 ${selectedVariant?.id === variant.id ? 'border-slate-900' : 'border-slate-200'} ${!variant.isAvailable ? 'opacity-50' : ''}`}>
                           <img src={variant.imageUrl} alt={variant.colorName} className="w-full h-full object-cover"/>
+                          {!variant.isAvailable && (
+                            <div className="absolute inset-0 bg-white/70 flex items-center justify-center">
+                                <span className="text-white bg-slate-800 text-[9px] font-black px-2 py-1 rounded-full uppercase tracking-wider">Habis</span>
+                            </div>
+                          )}
                       </div>
-                      <span className={`mt-2 text-xs font-bold block transition-colors ${selectedVariant?.id === variant.id ? 'text-slate-900' : 'text-slate-500 group-hover:text-slate-800'}`}>{variant.colorName}</span>
+                      <span className={`mt-2 text-xs font-bold block transition-colors ${selectedVariant?.id === variant.id ? 'text-slate-900' : 'text-slate-500 group-hover:text-slate-800'} ${!variant.isAvailable ? 'text-slate-400' : ''}`}>{variant.colorName}</span>
                   </button>
                 ))}
               </div>
@@ -113,8 +118,9 @@ const DetailView: React.FC<DetailViewProps> = ({ product, selectedVariant, onVar
               <h3 className="text-[10px] font-black text-slate-900 uppercase tracking-widest mb-4">Pilih Ukuran</h3>
               <div className="flex flex-wrap items-start gap-3">
                 {product.sizes.map(size => (
-                  <button key={size.id} onClick={() => onSizeChange(size.name)} className={`px-4 py-2 rounded-full text-sm font-bold border-2 transition-all ${selectedSize === size.name ? 'bg-slate-900 text-white border-slate-900' : 'bg-white text-slate-800 border-slate-200 hover:border-slate-400'}`}>
+                  <button key={size.id} onClick={() => onSizeChange(size.name)} className={`relative px-4 py-2 rounded-full text-sm font-bold border-2 transition-all disabled:opacity-50 disabled:cursor-not-allowed ${selectedSize === size.name ? 'bg-slate-900 text-white border-slate-900' : 'bg-white text-slate-800 border-slate-200 hover:border-slate-400'}`} disabled={!size.isAvailable}>
                     {size.name}
+                    {!size.isAvailable && <span className="absolute -top-1 -right-1 block h-3 w-3 rounded-full bg-slate-400 ring-2 ring-white"></span>}
                   </button>
                 ))}
               </div>

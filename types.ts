@@ -4,11 +4,13 @@ export interface ProductVariant {
   colorName: string;
   imageUrl: string;
   price?: string; // Harga spesifik untuk varian, opsional
+  isAvailable: boolean;
 }
 
 export interface ProductSize {
   id: string;
   name: string;
+  isAvailable: boolean;
 }
 
 export interface Product {

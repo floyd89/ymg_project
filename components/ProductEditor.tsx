@@ -173,7 +173,17 @@ const ProductEditor: React.FC<ProductEditorProps> = ({ product, categories, onSa
       return { ...prev, variants: newVariants };
     });
   };
-  const addVariant = () => setProductData(prev => prev ? { ...prev, variants: [...prev.variants, { id: `variant-${Date.now()}`, colorName: '', imageUrl: '', price: '' }] } : null);
+
+  const handleVariantToggleChange = (index: number, isAvailable: boolean) => {
+    setProductData(prev => {
+        if (!prev) return null;
+        const newVariants = [...prev.variants];
+        newVariants[index].isAvailable = isAvailable;
+        return { ...prev, variants: newVariants };
+    });
+  };
+  
+  const addVariant = () => setProductData(prev => prev ? { ...prev, variants: [...prev.variants, { id: `variant-${Date.now()}`, colorName: '', imageUrl: '', price: '', isAvailable: true }] } : null);
   const removeVariant = (index: number) => setProductData(prev => prev ? { ...prev, variants: prev.variants.filter((_, i) => i !== index) } : null);
 
   const handleSizeChange = (index: number, e: React.ChangeEvent<HTMLInputElement>) => {
@@ -185,7 +195,17 @@ const ProductEditor: React.FC<ProductEditorProps> = ({ product, categories, onSa
       return { ...prev, sizes: newSizes };
     });
   };
-  const addSize = () => setProductData(prev => prev ? { ...prev, sizes: [...(prev.sizes || []), { id: `size-${Date.now()}`, name: '' }] } : null);
+
+  const handleSizeToggleChange = (index: number, isAvailable: boolean) => {
+    setProductData(prev => {
+        if (!prev) return null;
+        const newSizes = [...prev.sizes];
+        newSizes[index].isAvailable = isAvailable;
+        return { ...prev, sizes: newSizes };
+    });
+  };
+
+  const addSize = () => setProductData(prev => prev ? { ...prev, sizes: [...(prev.sizes || []), { id: `size-${Date.now()}`, name: '', isAvailable: true }] } : null);
   const removeSize = (index: number) => setProductData(prev => prev ? { ...prev, sizes: prev.sizes.filter((_, i) => i !== index) } : null);
 
   const handleDragStart = (index: number) => setDraggedIndex(index);
@@ -279,6 +299,10 @@ const ProductEditor: React.FC<ProductEditorProps> = ({ product, categories, onSa
                     <div className="flex-grow">
                         <input type="text" name="name" value={size.name} onChange={e => handleSizeChange(index, e)} placeholder="Nama Ukuran (cth: S, M, L, XL)" required className="w-full p-2 rounded-md border-slate-300 font-medium text-sm" />
                     </div>
+                    <label className="relative inline-flex items-center cursor-pointer">
+                        <input type="checkbox" checked={size.isAvailable} onChange={(e) => handleSizeToggleChange(index, e.target.checked)} className="sr-only peer" />
+                        <div className="w-11 h-6 bg-slate-200 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-slate-900"></div>
+                    </label>
                     <button type="button" onClick={() => removeSize(index)} className="text-red-500 hover:text-red-700 text-xs font-bold self-center">HAPUS</button>
                 </div>
               ))}
@@ -303,6 +327,10 @@ const ProductEditor: React.FC<ProductEditorProps> = ({ product, categories, onSa
                         <input type="text" name="colorName" value={variant.colorName} onChange={e => handleVariantChange(index, e)} placeholder="Nama Varian (cth: Merah)" required className="w-full p-2 rounded-md border-slate-300 font-medium text-sm" />
                         <input type="text" name="price" value={formatCurrency(variant.price)} onChange={e => handleVariantChange(index, e)} placeholder="Harga Varian (opsional)" className="w-full p-2 rounded-md border-slate-300 font-medium text-sm" />
                     </div>
+                    <label className="relative inline-flex items-center cursor-pointer self-center">
+                        <input type="checkbox" checked={variant.isAvailable} onChange={(e) => handleVariantToggleChange(index, e.target.checked)} className="sr-only peer" />
+                        <div className="w-11 h-6 bg-slate-200 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-slate-900"></div>
+                    </label>
                     <button type="button" onClick={() => removeVariant(index)} className="text-red-500 hover:text-red-700 text-xs font-bold self-start">HAPUS</button>
                 </div>
               ))}
