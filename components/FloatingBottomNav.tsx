@@ -42,15 +42,15 @@ const FloatingBottomNav: React.FC<FloatingBottomNavProps> = ({ onHomeClick, onAb
           <button
             onClick={onAddToCart}
             disabled={!isReadyToBuy}
-            className="w-full py-4 bg-slate-100 text-slate-900 rounded-2xl text-sm font-bold uppercase tracking-widest hover:bg-slate-200 transition-colors transform active:scale-95 disabled:bg-slate-300 disabled:text-slate-500 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+            aria-label="Tambah ke Keranjang"
+            className="flex-shrink-0 w-14 h-14 bg-slate-100 text-slate-900 rounded-2xl hover:bg-slate-200 transition-colors transform active:scale-95 disabled:bg-slate-300 disabled:text-slate-500 disabled:cursor-not-allowed flex items-center justify-center"
           >
-             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" /></svg>
-             <span>Keranjang</span>
+             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" /></svg>
           </button>
           <button
             onClick={onBuyNow}
             disabled={!isReadyToBuy}
-            className="w-full max-w-xs py-4 bg-slate-900 text-white rounded-2xl text-sm font-bold uppercase tracking-widest hover:bg-slate-800 transition-colors transform active:scale-95 shadow-lg shadow-slate-400/50 disabled:bg-slate-400 disabled:cursor-not-allowed"
+            className="w-full h-14 bg-slate-900 text-white rounded-2xl text-sm font-bold uppercase tracking-widest hover:bg-slate-800 transition-colors transform active:scale-95 shadow-lg shadow-slate-400/50 disabled:bg-slate-400 disabled:cursor-not-allowed flex items-center justify-center"
           >
             {isReadyToBuy ? 'Beli Sekarang' : 'Pilih Varian'}
           </button>
