@@ -28,8 +28,8 @@ const getTodaysStats = async (): Promise<{ views: number; buyClicks: number; wha
     
   if (error) {
     console.error("Error fetching today's stats:", error);
-    // Lemparkan error agar komponen bisa menangkapnya dan menampilkan notifikasi
-    throw error;
+    // Lemparkan error standar agar komponen bisa menangkapnya dengan andal
+    throw new Error(error.message);
   }
 
   const stats = { views: 0, buyClicks: 0, whatsappClicks: 0 };

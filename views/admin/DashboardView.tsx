@@ -69,7 +69,8 @@ const DashboardView: React.FC = () => {
           });
 
       } catch (err: any) {
-        if (err.message.includes('relation "public.analytics_events" does not exist')) {
+        // Cek error yang lebih tangguh dengan mencari nama tabel di pesan error
+        if (err.message && err.message.includes('analytics_events')) {
             setError('SCHEMA_NOT_FOUND');
         } else {
             setError('Gagal memuat data. Periksa koneksi Anda.');
