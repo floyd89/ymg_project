@@ -45,7 +45,7 @@ export interface AppSettings {
   telegramUrl?: string | null;
 }
 
-export type View = 'home' | 'detail' | 'about' | 'checkout' | 'cart';
+export type View = 'home' | 'detail' | 'about' | 'checkout' | 'cart' | 'authentic';
 
 export interface CartItem {
   id: string; // Composite key: `${productId}-${variantId}-${size}`

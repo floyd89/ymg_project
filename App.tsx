@@ -8,6 +8,7 @@ import DetailView from './views/DetailView';
 import AboutView from './views/AboutView';
 import CheckoutView from './views/CheckoutView';
 import CartView from './views/CartView';
+import AuthenticView from './views/AuthenticView';
 import AdminLayout from './views/AdminView';
 import { View, Product, ProductVariant, Category, AppSettings, CartItem } from './types';
 import { productService } from './services/productService';
@@ -78,6 +79,9 @@ const App: React.FC = () => {
     } else if (hash === '#checkout') {
       setCurrentView('checkout');
       history.replaceState({ view: 'checkout' }, '', '#checkout');
+    } else if (hash === '#authentic') {
+      setCurrentView('authentic');
+      history.replaceState({ view: 'authentic' }, '', '#authentic');
     } else {
       setCurrentView('home');
       history.replaceState({ view: 'home' }, '', window.location.pathname);
@@ -132,6 +136,7 @@ const App: React.FC = () => {
     } else if (view === 'about') hash = '#about';
     else if (view === 'cart') hash = '#cart';
     else if (view === 'checkout') hash = '#checkout';
+    else if (view === 'authentic') hash = '#authentic';
     
 
     if (window.location.hash !== hash || window.location.pathname !== '/') {
@@ -215,7 +220,7 @@ const App: React.FC = () => {
 
 
   const renderContent = () => {
-    if (loading) return (
+    if (loading && currentView !== 'authentic') return (
       <div className="flex-grow flex items-center justify-center min-h-[50vh]">
         <div className="w-12 h-12 border-4 border-slate-200 border-t-slate-900 rounded-full animate-spin"></div>
       </div>
@@ -228,6 +233,7 @@ const App: React.FC = () => {
       case 'about': return <AboutView onBack={handleBackNavigation} />;
       case 'cart': return <CartView cart={cart} onUpdateQuantity={handleUpdateCartQuantity} onRemoveItem={handleRemoveFromCart} onBack={handleBackNavigation} onCheckout={navigateToCheckout} />;
       case 'checkout': return settings && <CheckoutView cart={cart} onBack={() => navigateTo('cart')} storeWhatsAppNumber={settings.whatsAppNumber} />;
+      case 'authentic': return <AuthenticView onGoHome={navigateToHome} />;
       default: return <HomeView products={products} categories={categories} selectedCategory={selectedCategory} onSelectCategory={setSelectedCategory} onProductClick={handleProductClick} onGoProducts={navigateToProductsSection} />;
     }
   };
