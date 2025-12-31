@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 // FIX: Changed import to 'import type' for the Session type. This aligns with best practices and can help with type resolution.
 import type { Session } from '@supabase/supabase-js';
-import { authService } from '../../services/authService';
+import { authService } from '../services/authService';
 import LoginView from './admin/LoginView';
 import DashboardView from './admin/DashboardView';
 import ProductListView from './admin/ProductListView';
