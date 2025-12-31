@@ -1,7 +1,7 @@
-
 import React, { useState, useEffect, useMemo } from 'react';
 import { Product, ProductVariant } from '../types';
 import { formatCurrency } from '../utils/formatters';
+import { analyticsService } from '../services/analyticsService';
 
 interface DetailViewProps {
   product: Product;
@@ -25,6 +25,10 @@ const DetailView: React.FC<DetailViewProps> = ({ product, selectedVariant, onVar
     }
     setQuantity(1);
     onSizeChange(null); // Reset size saat produk berubah
+    
+    // Lacak event saat halaman detail produk dilihat
+    analyticsService.trackEvent('product_view', product.id);
+
   }, [product.id, onSizeChange]);
 
   useEffect(() => {
@@ -50,6 +54,10 @@ const DetailView: React.FC<DetailViewProps> = ({ product, selectedVariant, onVar
   const handleBuyNow = () => {
     if (!isReadyForCart) return;
     const variant = selectedVariant || { id: 'default', colorName: 'Default', imageUrl: '', isAvailable: true };
+    
+    // Lacak event klik "Beli Sekarang"
+    analyticsService.trackEvent('buy_now_click', product.id);
+
     onBuyNow(product, variant, quantity, selectedSize);
   };
   

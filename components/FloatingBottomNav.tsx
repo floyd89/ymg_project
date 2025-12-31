@@ -1,7 +1,7 @@
-
 import React, { useState, useEffect } from 'react';
 import { Product, ProductVariant } from '../types';
 import { settingsService } from '../services/settingsService';
+import { analyticsService } from '../services/analyticsService';
 
 interface FloatingBottomNavProps {
   onHomeClick: () => void;
@@ -30,6 +30,10 @@ const FloatingBottomNav: React.FC<FloatingBottomNavProps> = ({ onHomeClick, onAb
 
   const handleGeneralChatClick = () => {
     if (!whatsAppNumber) return;
+    
+    // Lacak event klik tombol chat WhatsApp
+    analyticsService.trackEvent('whatsapp_click');
+    
     const message = encodeURIComponent("Halo YMG Official Store, saya ingin bertanya mengenai koleksi tas Anda.");
     window.open(`https://wa.me/${whatsAppNumber}?text=${message}`, '_blank');
   };
