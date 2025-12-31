@@ -3,6 +3,16 @@ import { analyticsService, AnalyticsEvent } from '../../services/analyticsServic
 import { supabase } from '../../lib/supabaseClient';
 import AnalyticsSchemaNotice from '../../components/admin/AnalyticsSchemaNotice';
 
+// Helper function to check if a date is today
+const isToday = (someDate: Date) => {
+  const today = new Date();
+  return (
+    someDate.getDate() === today.getDate() &&
+    someDate.getMonth() === today.getMonth() &&
+    someDate.getFullYear() === today.getFullYear()
+  );
+};
+
 // Komponen Kartu Statistik yang dapat digunakan kembali
 const StatCard: React.FC<{
   icon: React.ReactElement;
@@ -30,11 +40,14 @@ const StatCard: React.FC<{
 };
 
 const DashboardView: React.FC = () => {
+  const [selectedDate, setSelectedDate] = useState(new Date());
   const [stats, setStats] = useState({ views: 0, buyClicks: 0, whatsappClicks: 0 });
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   const handleRealtimeUpdate = useCallback((payload: any) => {
+    if (!isToday(selectedDate)) return; // Hanya perbarui jika melihat hari ini
+
     const newEvent = payload.new.event_type as AnalyticsEvent;
     if (!newEvent) return;
     
@@ -44,32 +57,34 @@ const DashboardView: React.FC = () => {
         if (newEvent === 'whatsapp_click') return { ...currentStats, whatsappClicks: currentStats.whatsappClicks + 1 };
         return currentStats;
     });
-  }, []);
+  }, [selectedDate]);
 
   useEffect(() => {
     let channel: any = null;
 
-    const fetchAndSubscribe = async () => {
+    const fetchDataForDate = async () => {
       setIsLoading(true);
       setError(null);
       try {
-        const initialStats = await analyticsService.getTodaysStats();
+        const initialStats = await analyticsService.getStatsForDate(selectedDate);
         setStats(initialStats);
 
-        channel = supabase
-          .channel('analytics_events_realtime')
-          .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'analytics_events' }, handleRealtimeUpdate)
-          .subscribe((status, err) => {
-              if (status === 'SUBSCRIBED') {
-                console.log('Terhubung ke update analitik real-time.');
-              }
-              if (status === 'CHANNEL_ERROR' || err) {
-                console.error('Koneksi real-time gagal:', err);
-              }
-          });
+        // Hanya berlangganan update real-time jika tanggal yang dipilih adalah hari ini
+        if (isToday(selectedDate)) {
+          channel = supabase
+            .channel('analytics_events_realtime')
+            .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'analytics_events' }, handleRealtimeUpdate)
+            .subscribe((status, err) => {
+                if (status === 'SUBSCRIBED') {
+                  console.log('Terhubung ke update analitik real-time.');
+                }
+                if (status === 'CHANNEL_ERROR' || err) {
+                  console.error('Koneksi real-time gagal:', err);
+                }
+            });
+        }
 
       } catch (err: any) {
-        // Cek error yang lebih tangguh dengan mencari nama tabel di pesan error
         if (err.message && err.message.includes('analytics_events')) {
             setError('SCHEMA_NOT_FOUND');
         } else {
@@ -81,21 +96,57 @@ const DashboardView: React.FC = () => {
       }
     };
     
-    fetchAndSubscribe();
+    fetchDataForDate();
 
     return () => {
       if (channel) {
         supabase.removeChannel(channel);
       }
     };
-  }, [handleRealtimeUpdate]);
+  }, [selectedDate, handleRealtimeUpdate]);
 
+  const handleDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const dateValue = e.target.value;
+    if (dateValue) {
+        const [year, month, day] = dateValue.split('-').map(Number);
+        setSelectedDate(new Date(year, month - 1, day));
+    } else {
+        setSelectedDate(new Date());
+    }
+  };
+
+  const formatDateForInput = (date: Date) => {
+    const offset = date.getTimezoneOffset();
+    const adjustedDate = new Date(date.getTime() - (offset*60*1000));
+    return adjustedDate.toISOString().split('T')[0];
+  };
+
+  const title = isToday(selectedDate) 
+    ? "Dashboard Real-time" 
+    : `Statistik untuk ${selectedDate.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}`;
+  
+  const subtitle = isToday(selectedDate)
+    ? "Ringkasan aktivitas toko Anda untuk hari ini."
+    : "Total aktivitas pengunjung pada tanggal yang dipilih.";
 
   return (
     <div className="animate-view-enter space-y-8">
-      <div>
-        <h1 className="text-3xl font-black text-slate-900">Dashboard Real-time</h1>
-        <p className="text-slate-500 mt-1">Ringkasan aktivitas toko Anda untuk hari ini.</p>
+      <div className="flex flex-col md:flex-row justify-between md:items-start gap-4">
+        <div>
+          <h1 className="text-3xl font-black text-slate-900">{title}</h1>
+          <p className="text-slate-500 mt-1">{subtitle}</p>
+        </div>
+        <div className="shrink-0">
+          <label htmlFor="date-picker" className="sr-only">Pilih Tanggal</label>
+          <input
+            id="date-picker"
+            type="date"
+            value={formatDateForInput(selectedDate)}
+            onChange={handleDateChange}
+            max={formatDateForInput(new Date())} // Tidak bisa memilih tanggal di masa depan
+            className="w-full md:w-auto p-3 bg-white rounded-xl border-2 border-slate-200 font-bold text-sm focus:ring-2 focus:ring-slate-900 focus:border-slate-900 shadow-sm"
+          />
+        </div>
       </div>
 
       {isLoading && (
@@ -138,13 +189,15 @@ const DashboardView: React.FC = () => {
                 />
             </div>
 
-            <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
-                <div className="flex items-center gap-4">
-                    <div className="w-4 h-4 rounded-full bg-emerald-500 animate-pulse"></div>
-                    <h3 className="text-lg font-bold text-slate-800">Status: Real-time Aktif</h3>
-                </div>
-                <p className="text-sm text-slate-500 mt-2">Dasbor ini akan otomatis diperbarui setiap kali ada pengunjung baru atau aksi di toko Anda.</p>
-            </div>
+            {isToday(selectedDate) && (
+              <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+                  <div className="flex items-center gap-4">
+                      <div className="w-4 h-4 rounded-full bg-emerald-500 animate-pulse"></div>
+                      <h3 className="text-lg font-bold text-slate-800">Status: Real-time Aktif</h3>
+                  </div>
+                  <p className="text-sm text-slate-500 mt-2">Dasbor ini akan otomatis diperbarui setiap kali ada pengunjung baru atau aksi di toko Anda.</p>
+              </div>
+            )}
         </>
       )}
     </div>

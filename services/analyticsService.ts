@@ -16,18 +16,21 @@ const trackEvent = async (eventType: AnalyticsEvent, productId?: string): Promis
     });
 };
 
-const getTodaysStats = async (): Promise<{ views: number; buyClicks: number; whatsappClicks: number }> => {
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const todayISO = today.toISOString();
+const getStatsForDate = async (date: Date): Promise<{ views: number; buyClicks: number; whatsappClicks: number }> => {
+  const startOfDay = new Date(date);
+  startOfDay.setHours(0, 0, 0, 0);
+
+  const endOfDay = new Date(date);
+  endOfDay.setHours(23, 59, 59, 999);
 
   const { data, error } = await supabase
     .from('analytics_events')
     .select('event_type')
-    .gte('created_at', todayISO);
+    .gte('created_at', startOfDay.toISOString())
+    .lte('created_at', endOfDay.toISOString());
     
   if (error) {
-    console.error("Error fetching today's stats:", error);
+    console.error(`Error fetching stats for ${date.toDateString()}:`, error);
     // Lemparkan error standar agar komponen bisa menangkapnya dengan andal
     throw new Error(error.message);
   }
@@ -46,5 +49,5 @@ const getTodaysStats = async (): Promise<{ views: number; buyClicks: number; wha
 
 export const analyticsService = {
   trackEvent,
-  getTodaysStats,
+  getStatsForDate,
 };
