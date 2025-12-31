@@ -1,4 +1,3 @@
-
 import { Category } from '../types';
 import { supabase } from '../lib/supabaseClient';
 
@@ -26,7 +25,7 @@ const getCategories = async (): Promise<Category[]> => {
   
   if (error) {
     console.error("Error fetching categories:", error);
-    throw error;
+    throw new Error(`Tidak dapat mengambil data kategori: ${error.message}`);
   }
   return data || [];
 };
@@ -44,8 +43,12 @@ const addCategory = async (name: string): Promise<Category> => {
     .ilike('name', trimmedName)
     .limit(1);
 
-  if (selectError) throw selectError;
-  if (existing.length > 0) throw new Error(`Kategori "${trimmedName}" sudah ada.`);
+  if (selectError) {
+    throw new Error(`Gagal memeriksa duplikasi kategori: ${selectError.message}`);
+  }
+  if (existing.length > 0) {
+    throw new Error(`Kategori "${trimmedName}" sudah ada.`);
+  }
 
   const { data, error } = await supabase
     .from('categories')
@@ -55,7 +58,7 @@ const addCategory = async (name: string): Promise<Category> => {
 
   if (error) {
     console.error("Error adding category:", error);
-    throw error;
+    throw new Error(`Gagal menambah kategori: ${error.message}`);
   }
   return data;
 };
@@ -68,7 +71,7 @@ const deleteCategory = async (id: number): Promise<void> => {
 
   if (error) {
     console.error("Error deleting category:", error);
-    throw error;
+    throw new Error(`Gagal menghapus kategori: ${error.message}`);
   }
 };
 
