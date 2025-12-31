@@ -1,12 +1,14 @@
 import { supabase } from '../lib/supabaseClient';
-import type { AuthError, Session, SignInWithPasswordCredentials, User } from '@supabase/supabase-js';
+// FIX: Import `Subscription` type for the return value of onAuthStateChange.
+import type { AuthError, Session, SignInWithPasswordCredentials, User, Subscription } from '@supabase/supabase-js';
 
-// FIX: The errors indicate an outdated version of @supabase/supabase-js is being used (likely v1).
-// The code has been updated to use the v1 authentication API to match the expected environment.
+// FIX: The errors indicate a v2 @supabase/supabase-js is being used, but the code was written for v1.
+// The code has been updated to use the v2 authentication API.
 const signIn = async (credentials: SignInWithPasswordCredentials): Promise<{ session: Session | null, error: AuthError | null }> => {
   // v1 uses `signIn` for password auth and returns { user, session, error }
-  const { session, error } = await supabase.auth.signIn(credentials);
-  return { session, error };
+  // FIX: Use `signInWithPassword` which is the v2 equivalent of `signIn`.
+  const { data, error } = await supabase.auth.signInWithPassword(credentials);
+  return { session: data.session, error };
 };
 
 const signOut = async (): Promise<{ error: AuthError | null }> => {
@@ -17,13 +19,15 @@ const signOut = async (): Promise<{ error: AuthError | null }> => {
 
 const getUser = async (): Promise<{ user: User | null, error: AuthError | null }> => {
     // v1 uses `user()` which is synchronous. Wrapped in a promise to maintain the async interface.
-    const user = supabase.auth.user();
-    return { user, error: null };
+    // FIX: Use async `getUser()` which is the v2 equivalent of `user()`.
+    const { data, error } = await supabase.auth.getUser();
+    return { user: data.user, error };
 }
 
-const onAuthStateChange = (callback: (session: Session | null) => void) => {
+const onAuthStateChange = (callback: (session: Session | null) => void): Subscription => {
   // v1's onAuthStateChange returns the subscription in the `data` property.
-  const { data: subscription } = supabase.auth.onAuthStateChange((_event, session) => {
+  // FIX: Correctly destructure the subscription object from the v2 API response to fix the `unsubscribe` error.
+  const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
     callback(session);
   });
   return subscription;
