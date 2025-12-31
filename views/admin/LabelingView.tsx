@@ -14,6 +14,9 @@ const LabelingView: React.FC = () => {
   const [bgColor, setBgColor] = useState('#ffffff'); // Warna latar
   const [eyeColor, setEyeColor] = useState('#2d3748'); // Warna khusus untuk pola sudut
 
+  // State untuk menyimpan URL logo yang aman dari CORS
+  const [logoDataUrl, setLogoDataUrl] = useState<string | null>(null);
+
   const verificationUrl = `${window.location.origin}/#authentic`;
 
   useEffect(() => {
@@ -29,6 +32,43 @@ const LabelingView: React.FC = () => {
     };
     fetchSettings();
   }, []);
+
+  // PERBAIKAN: Efek untuk memuat logo dan mengubahnya menjadi Data URL
+  // Ini mencegah masalah "tainted canvas" karena Cross-Origin (CORS) saat mengunduh.
+  useEffect(() => {
+    if (!settings) return;
+
+    const logoUrl = settings.storeLogoUrl;
+
+    if (!logoUrl || logoUrl.startsWith('data:')) {
+      setLogoDataUrl(logoUrl || null);
+      return;
+    }
+
+    const img = new Image();
+    img.crossOrigin = 'Anonymous'; // Atribut krusial untuk CORS
+    
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      canvas.width = img.naturalWidth;
+      canvas.height = img.naturalHeight;
+      const ctx = canvas.getContext('2d');
+      if (ctx) {
+        ctx.drawImage(img, 0, 0);
+        setLogoDataUrl(canvas.toDataURL());
+      } else {
+        console.warn("Gagal membuat canvas context untuk konversi logo.");
+        setLogoDataUrl(logoUrl); // Fallback ke URL asli
+      }
+    };
+    
+    img.onerror = () => {
+      console.warn("Gagal memuat logo dengan crossOrigin='Anonymous'. Ini bisa jadi masalah CORS di bucket storage Anda. Download QR mungkin akan gagal.");
+      setLogoDataUrl(logoUrl); // Fallback ke URL asli
+    };
+    
+    img.src = logoUrl;
+  }, [settings]);
 
   // Efek untuk menggambar ulang 'mata' QR code dengan warna kustom
   useEffect(() => {
@@ -67,7 +107,7 @@ const LabelingView: React.FC = () => {
 
     return () => clearTimeout(timer);
 
-  }, [fgColor, bgColor, eyeColor, settings, isLoading, verificationUrl]);
+  }, [fgColor, bgColor, eyeColor, isLoading, logoDataUrl]); // Tambahkan logoDataUrl sebagai dependency
 
 
   const handleDownload = () => {
@@ -79,43 +119,48 @@ const LabelingView: React.FC = () => {
       alert("QR Code tidak dapat ditemukan untuk diunduh.");
       return;
     }
-
-    // Buat canvas baru untuk menggabungkan QR dan teks
-    const offscreenCanvas = document.createElement('canvas');
-    const ctx = offscreenCanvas.getContext('2d');
-    if (!ctx) return;
-
-    const padding = 30;
-    const textBlockHeight = 50;
     
-    offscreenCanvas.width = canvas.width + padding * 2;
-    offscreenCanvas.height = canvas.height + padding * 2 + textBlockHeight;
+    try {
+        // Buat canvas baru untuk menggabungkan QR dan teks
+        const offscreenCanvas = document.createElement('canvas');
+        const ctx = offscreenCanvas.getContext('2d');
+        if (!ctx) return;
 
-    // Latar belakang
-    ctx.fillStyle = bgColor; // Menggunakan warna latar yang dipilih pengguna
-    ctx.fillRect(0, 0, offscreenCanvas.width, offscreenCanvas.height);
+        const padding = 30;
+        const textBlockHeight = 70; // Beri ruang lebih untuk teks
+        
+        offscreenCanvas.width = canvas.width + padding * 2;
+        offscreenCanvas.height = canvas.height + padding + textBlockHeight;
 
-    // Gambar QR code ke canvas baru
-    ctx.drawImage(canvas, padding, padding);
+        // Latar belakang
+        ctx.fillStyle = bgColor;
+        ctx.fillRect(0, 0, offscreenCanvas.width, offscreenCanvas.height);
 
-    // Tambahkan teks di bawah QR code
-    ctx.fillStyle = '#2d3748';
-    ctx.textAlign = 'center';
-    
-    ctx.font = 'bold 18px sans-serif';
-    ctx.fillText("Pindai untuk Keaslian Produk", offscreenCanvas.width / 2, canvas.height + padding + 30);
-    
-    ctx.font = '14px monospace';
-    ctx.fillStyle = '#555555';
-    ctx.fillText(window.location.origin, offscreenCanvas.width / 2, canvas.height + padding + 55);
+        // Gambar QR code ke canvas baru
+        ctx.drawImage(canvas, padding, padding);
 
-    // Trigger download
-    const link = document.createElement('a');
-    link.download = 'ymg-qrcode-label.png';
-    link.href = offscreenCanvas.toDataURL('image/png');
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+        // Tambahkan teks di bawah QR code
+        ctx.fillStyle = '#2d3748';
+        ctx.textAlign = 'center';
+        
+        ctx.font = 'bold 18px sans-serif';
+        ctx.fillText("Pindai untuk Keaslian Produk", offscreenCanvas.width / 2, canvas.height + padding + 35);
+        
+        ctx.font = '14px monospace';
+        ctx.fillStyle = '#555555';
+        ctx.fillText(window.location.origin, offscreenCanvas.width / 2, canvas.height + padding + 60);
+
+        // Trigger download
+        const link = document.createElement('a');
+        link.download = 'ymg-qrcode-label.png';
+        link.href = offscreenCanvas.toDataURL('image/png');
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    } catch (e) {
+        console.error("Download failed:", e);
+        alert("Gagal mengunduh gambar. Ini mungkin karena masalah CORS pada gambar logo. Pastikan bucket Supabase Anda dikonfigurasi dengan benar untuk akses publik.");
+    }
   };
   
   const resetColors = () => {
@@ -136,7 +181,7 @@ const LabelingView: React.FC = () => {
           {/* QR Code Preview & Customization */}
           <div className="w-full md:w-auto flex-shrink-0">
             <div ref={printRef} className="p-6 border-2 border-dashed border-slate-300 rounded-lg inline-flex flex-col items-center">
-              {isLoading ? (
+              {isLoading || (settings && !logoDataUrl && settings.storeLogoUrl) ? (
                 <div className="w-48 h-48 flex items-center justify-center bg-slate-100 rounded-md">
                   <div className="w-8 h-8 border-2 border-slate-200 border-t-slate-900 rounded-full animate-spin"></div>
                 </div>
@@ -148,8 +193,8 @@ const LabelingView: React.FC = () => {
                   bgColor={bgColor}
                   level={"H"} // High error correction for logo inclusion
                   includeMargin={true}
-                  imageSettings={settings?.storeLogoUrl ? {
-                    src: settings.storeLogoUrl,
+                  imageSettings={logoDataUrl ? {
+                    src: logoDataUrl,
                     height: 40,
                     width: 40,
                     excavate: true,
