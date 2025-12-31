@@ -8,6 +8,10 @@ const LabelingView: React.FC = () => {
   const printRef = useRef<HTMLDivElement>(null);
   const [settings, setSettings] = useState<AppSettings | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  
+  // State untuk kustomisasi warna QR Code
+  const [fgColor, setFgColor] = useState('#2d3748'); // Warna default: abu-abu gelap elegan
+  const [bgColor, setBgColor] = useState('#ffffff'); // Warna default: putih
 
   const verificationUrl = `${window.location.origin}/#authentic`;
 
@@ -80,6 +84,11 @@ const LabelingView: React.FC = () => {
       printWindow.close();
     }
   };
+  
+  const resetColors = () => {
+    setFgColor('#2d3748');
+    setBgColor('#ffffff');
+  };
 
   return (
     <div className="animate-view-enter">
@@ -89,8 +98,8 @@ const LabelingView: React.FC = () => {
       </div>
 
       <div className="bg-white p-6 md:p-8 rounded-2xl border border-slate-200 shadow-sm">
-        <div className="flex flex-col md:flex-row items-center gap-8">
-          {/* QR Code Preview */}
+        <div className="flex flex-col md:flex-row items-start gap-8">
+          {/* QR Code Preview & Customization */}
           <div className="w-full md:w-auto flex-shrink-0">
             <div ref={printRef} className="p-6 border-2 border-dashed border-slate-300 rounded-lg inline-flex flex-col items-center">
               {isLoading ? (
@@ -101,6 +110,8 @@ const LabelingView: React.FC = () => {
                 <QRCodeCanvas
                   value={verificationUrl}
                   size={200}
+                  fgColor={fgColor}
+                  bgColor={bgColor}
                   level={"H"} // High error correction for logo inclusion
                   includeMargin={true}
                   imageSettings={settings?.storeLogoUrl ? {
@@ -116,13 +127,29 @@ const LabelingView: React.FC = () => {
                  <p className="url-text text-xs text-slate-500 break-all">{window.location.origin}</p>
               </div>
             </div>
+            
+            {/* Color Customization */}
+            <div className="mt-4 bg-slate-50 p-4 rounded-lg border border-slate-200 w-full max-w-xs">
+                <h4 className="text-xs font-bold text-slate-600 mb-3">Kustomisasi Tampilan</h4>
+                <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                        <label htmlFor="fgColor" className="text-sm font-medium text-slate-800">Warna Titik QR</label>
+                        <input type="color" id="fgColor" value={fgColor} onChange={(e) => setFgColor(e.target.value)} className="w-8 h-8 rounded-lg border border-slate-300 cursor-pointer" />
+                    </div>
+                    <div className="flex items-center justify-between">
+                        <label htmlFor="bgColor" className="text-sm font-medium text-slate-800">Warna Latar</label>
+                        <input type="color" id="bgColor" value={bgColor} onChange={(e) => setBgColor(e.target.value)} className="w-8 h-8 rounded-lg border border-slate-300 cursor-pointer" />
+                    </div>
+                </div>
+                <button onClick={resetColors} className="text-xs font-bold text-slate-500 hover:underline mt-3">Reset Warna</button>
+            </div>
           </div>
 
           {/* Instructions */}
           <div className="flex-1">
             <h3 className="font-bold text-lg text-slate-800">QR Code Kustom Anda</h3>
             <p className="text-sm text-slate-600 mt-2 mb-4">
-              QR code ini secara otomatis menampilkan logo toko Anda di tengahnya. Logo diambil dari pengaturan profil toko Anda.
+              QR code ini secara otomatis menampilkan logo toko Anda di tengahnya. Anda juga dapat mengubah warna titik dan latar belakang agar sesuai dengan branding Anda.
             </p>
             <ul className="list-disc list-inside text-sm text-slate-600 space-y-2">
               <li>Saat pelanggan memindai, mereka akan diarahkan ke halaman verifikasi.</li>
