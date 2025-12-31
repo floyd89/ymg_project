@@ -188,16 +188,6 @@ const DashboardView: React.FC = () => {
                 isLoading={isLoading}
                 />
             </div>
-
-            {isToday(selectedDate) && (
-              <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
-                  <div className="flex items-center gap-4">
-                      <div className="w-4 h-4 rounded-full bg-emerald-500 animate-pulse"></div>
-                      <h3 className="text-lg font-bold text-slate-800">Status: Real-time Aktif</h3>
-                  </div>
-                  <p className="text-sm text-slate-500 mt-2">Dasbor ini akan otomatis diperbarui setiap kali ada pengunjung baru atau aksi di toko Anda.</p>
-              </div>
-            )}
         </>
       )}
     </div>
