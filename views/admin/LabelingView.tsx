@@ -32,7 +32,8 @@ const LabelingView: React.FC = () => {
 
   // Efek untuk menggambar ulang 'mata' QR code dengan warna kustom
   useEffect(() => {
-    if (isLoading || !printRef.current) return;
+    // Jangan jalankan jika masih loading atau warna mata sama dengan warna titik (tidak ada perubahan)
+    if (isLoading || !printRef.current || eyeColor === fgColor) return;
 
     const canvas = printRef.current.querySelector('canvas');
     if (!canvas) return;
@@ -41,30 +42,35 @@ const LabelingView: React.FC = () => {
     if (!ctx) return;
 
     const size = canvas.width;
-    // Skalakan margin dan ukuran 'mata' berdasarkan ukuran total canvas
-    const margin = 4 * (size / 200); 
-    const eyeSize = size / 3.5; 
-    const eyeRadius = size / 20;
+    
+    // PERBAIKAN: Kalkulasi yang lebih akurat untuk ukuran dan posisi pola sudut (finder patterns).
+    // Asumsi QR code versi rendah (misal, v3) dengan 29 modul data + 8 modul margin (4 di setiap sisi).
+    // Total modul teoretis = 29 + 8 = 37.
+    const totalModules = 37; 
+    const scale = size / totalModules; // Ukuran satu modul dalam piksel
+    const eyeSize = 7 * scale; // Pola sudut selalu berukuran 7x7 modul
+    const margin = 4 * scale; // Margin standar adalah 4 modul
 
     const drawEye = (x: number, y: number) => {
-        // Bingkai luar (kustom)
+        const moduleSize = eyeSize / 7; // Sama dengan 'scale'
+        // 1. Gambar bingkai luar 7x7 modul dengan warna kustom
         ctx.fillStyle = eyeColor;
         ctx.fillRect(x, y, eyeSize, eyeSize);
 
-        // Spasi tengah (warna latar)
+        // 2. "Lubangi" bagian tengah dengan menggambar kotak 5x5 modul warna latar
         ctx.fillStyle = bgColor;
-        ctx.fillRect(x + eyeSize * 0.2, y + eyeSize * 0.2, eyeSize * 0.6, eyeSize * 0.6);
+        ctx.fillRect(x + moduleSize, y + moduleSize, eyeSize - 2 * moduleSize, eyeSize - 2 * moduleSize);
 
-        // Titik tengah (warna titik utama)
-        ctx.fillStyle = fgColor;
-        ctx.fillRect(x + eyeSize * 0.3, y + eyeSize * 0.3, eyeSize * 0.4, eyeSize * 0.4);
+        // 3. Gambar titik tengah 3x3 modul dengan warna kustom yang sama
+        ctx.fillStyle = eyeColor;
+        ctx.fillRect(x + 2 * moduleSize, y + 2 * moduleSize, eyeSize - 4 * moduleSize, eyeSize - 4 * moduleSize);
     };
-
-    // Hapus timeout untuk aplikasi instan, pastikan dieksekusi setelah render
+    
+    // Gambar ulang ketiga pola sudut setelah render awal selesai
     const timer = setTimeout(() => {
-      drawEye(margin, margin); // Top-left
-      drawEye(size - eyeSize - margin, margin); // Top-right
-      drawEye(margin, size - eyeSize - margin); // Bottom-left
+      drawEye(margin, margin); // Pojok kiri atas
+      drawEye(size - eyeSize - margin, margin); // Pojok kanan atas
+      drawEye(margin, size - eyeSize - margin); // Pojok kiri bawah
     }, 0);
 
     return () => clearTimeout(timer);
