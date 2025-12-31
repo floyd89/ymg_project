@@ -10,8 +10,9 @@ const LabelingView: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   
   // State untuk kustomisasi warna QR Code
-  const [fgColor, setFgColor] = useState('#2d3748'); // Warna default: abu-abu gelap elegan
-  const [bgColor, setBgColor] = useState('#ffffff'); // Warna default: putih
+  const [fgColor, setFgColor] = useState('#2d3748'); // Warna titik
+  const [bgColor, setBgColor] = useState('#ffffff'); // Warna latar
+  const [eyeColor, setEyeColor] = useState('#2d3748'); // Warna khusus untuk pola sudut
 
   const verificationUrl = `${window.location.origin}/#authentic`;
 
@@ -28,6 +29,48 @@ const LabelingView: React.FC = () => {
     };
     fetchSettings();
   }, []);
+
+  // Efek untuk menggambar ulang 'mata' QR code dengan warna kustom
+  useEffect(() => {
+    if (isLoading || !printRef.current) return;
+
+    const canvas = printRef.current.querySelector('canvas');
+    if (!canvas) return;
+
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    const size = canvas.width;
+    // Skalakan margin dan ukuran 'mata' berdasarkan ukuran total canvas
+    const margin = 4 * (size / 200); 
+    const eyeSize = size / 3.5; 
+    const eyeRadius = size / 20;
+
+    const drawEye = (x: number, y: number) => {
+        // Bingkai luar (kustom)
+        ctx.fillStyle = eyeColor;
+        ctx.fillRect(x, y, eyeSize, eyeSize);
+
+        // Spasi tengah (warna latar)
+        ctx.fillStyle = bgColor;
+        ctx.fillRect(x + eyeSize * 0.2, y + eyeSize * 0.2, eyeSize * 0.6, eyeSize * 0.6);
+
+        // Titik tengah (warna titik utama)
+        ctx.fillStyle = fgColor;
+        ctx.fillRect(x + eyeSize * 0.3, y + eyeSize * 0.3, eyeSize * 0.4, eyeSize * 0.4);
+    };
+
+    // Hapus timeout untuk aplikasi instan, pastikan dieksekusi setelah render
+    const timer = setTimeout(() => {
+      drawEye(margin, margin); // Top-left
+      drawEye(size - eyeSize - margin, margin); // Top-right
+      drawEye(margin, size - eyeSize - margin); // Bottom-left
+    }, 0);
+
+    return () => clearTimeout(timer);
+
+  }, [fgColor, bgColor, eyeColor, settings, isLoading, verificationUrl]);
+
 
   const handlePrint = () => {
     const printElement = printRef.current;
@@ -88,6 +131,7 @@ const LabelingView: React.FC = () => {
   const resetColors = () => {
     setFgColor('#2d3748');
     setBgColor('#ffffff');
+    setEyeColor('#2d3748');
   };
 
   return (
@@ -135,6 +179,10 @@ const LabelingView: React.FC = () => {
                     <div className="flex items-center justify-between">
                         <label htmlFor="fgColor" className="text-sm font-medium text-slate-800">Warna Titik QR</label>
                         <input type="color" id="fgColor" value={fgColor} onChange={(e) => setFgColor(e.target.value)} className="w-8 h-8 rounded-lg border border-slate-300 cursor-pointer" />
+                    </div>
+                    <div className="flex items-center justify-between">
+                        <label htmlFor="eyeColor" className="text-sm font-medium text-slate-800">Warna Pola Pojok</label>
+                        <input type="color" id="eyeColor" value={eyeColor} onChange={(e) => setEyeColor(e.target.value)} className="w-8 h-8 rounded-lg border border-slate-300 cursor-pointer" />
                     </div>
                     <div className="flex items-center justify-between">
                         <label htmlFor="bgColor" className="text-sm font-medium text-slate-800">Warna Latar</label>
