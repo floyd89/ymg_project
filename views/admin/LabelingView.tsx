@@ -32,7 +32,6 @@ const LabelingView: React.FC = () => {
 
   // Efek untuk menggambar ulang 'mata' QR code dengan warna kustom
   useEffect(() => {
-    // Jangan jalankan jika masih loading atau warna mata sama dengan warna titik (tidak ada perubahan)
     if (isLoading || !printRef.current || eyeColor === fgColor) return;
 
     const canvas = printRef.current.querySelector('canvas');
@@ -43,34 +42,27 @@ const LabelingView: React.FC = () => {
 
     const size = canvas.width;
     
-    // PERBAIKAN: Kalkulasi yang lebih akurat untuk ukuran dan posisi pola sudut (finder patterns).
-    // Asumsi QR code versi rendah (misal, v3) dengan 29 modul data + 8 modul margin (4 di setiap sisi).
-    // Total modul teoretis = 29 + 8 = 37.
     const totalModules = 37; 
-    const scale = size / totalModules; // Ukuran satu modul dalam piksel
-    const eyeSize = 7 * scale; // Pola sudut selalu berukuran 7x7 modul
-    const margin = 4 * scale; // Margin standar adalah 4 modul
+    const scale = size / totalModules;
+    const eyeSize = 7 * scale;
+    const margin = 4 * scale;
 
     const drawEye = (x: number, y: number) => {
-        const moduleSize = eyeSize / 7; // Sama dengan 'scale'
-        // 1. Gambar bingkai luar 7x7 modul dengan warna kustom
+        const moduleSize = eyeSize / 7;
         ctx.fillStyle = eyeColor;
         ctx.fillRect(x, y, eyeSize, eyeSize);
 
-        // 2. "Lubangi" bagian tengah dengan menggambar kotak 5x5 modul warna latar
         ctx.fillStyle = bgColor;
         ctx.fillRect(x + moduleSize, y + moduleSize, eyeSize - 2 * moduleSize, eyeSize - 2 * moduleSize);
 
-        // 3. Gambar titik tengah 3x3 modul dengan warna kustom yang sama
         ctx.fillStyle = eyeColor;
         ctx.fillRect(x + 2 * moduleSize, y + 2 * moduleSize, eyeSize - 4 * moduleSize, eyeSize - 4 * moduleSize);
     };
     
-    // Gambar ulang ketiga pola sudut setelah render awal selesai
     const timer = setTimeout(() => {
-      drawEye(margin, margin); // Pojok kiri atas
-      drawEye(size - eyeSize - margin, margin); // Pojok kanan atas
-      drawEye(margin, size - eyeSize - margin); // Pojok kiri bawah
+      drawEye(margin, margin);
+      drawEye(size - eyeSize - margin, margin);
+      drawEye(margin, size - eyeSize - margin);
     }, 0);
 
     return () => clearTimeout(timer);
@@ -78,60 +70,52 @@ const LabelingView: React.FC = () => {
   }, [fgColor, bgColor, eyeColor, settings, isLoading, verificationUrl]);
 
 
-  const handlePrint = () => {
-    const printElement = printRef.current;
-    if (!printElement) return;
+  const handleDownload = () => {
+    const container = printRef.current;
+    if (!container) return;
 
-    const canvas = printElement.querySelector('canvas');
+    const canvas = container.querySelector('canvas');
     if (!canvas) {
-      alert("QR Code tidak dapat ditemukan untuk dicetak.");
+      alert("QR Code tidak dapat ditemukan untuk diunduh.");
       return;
     }
 
-    const qrImage = canvas.toDataURL('image/png');
-    const labelContent = printElement.querySelector('.print-content-text')?.innerHTML;
+    // Buat canvas baru untuk menggabungkan QR dan teks
+    const offscreenCanvas = document.createElement('canvas');
+    const ctx = offscreenCanvas.getContext('2d');
+    if (!ctx) return;
 
-    const printWindow = window.open('', '', 'height=500,width=500');
-    if (printWindow) {
-      printWindow.document.write(`
-        <html>
-          <head>
-            <title>Cetak Label</title>
-            <style>
-              @media print {
-                @page { size: 7cm 7cm; margin: 0; }
-                body { margin: 0; display: flex; align-items: center; justify-content: center; height: 100%; }
-                .print-container {
-                  display: flex;
-                  flex-direction: column;
-                  align-items: center;
-                  justify-content: center;
-                  border: 2px dashed #ccc;
-                  padding: 20px;
-                  page-break-inside: avoid;
-                  width: 100%;
-                  height: 100%;
-                  box-sizing: border-box;
-                }
-                img { max-width: 80%; max-height: 80%; object-fit: contain; }
-                .label-text { font-family: sans-serif; font-weight: bold; margin-top: 15px; font-size: 12px; text-align: center; }
-                .url-text { font-size: 8px; font-family: monospace; color: #555; text-align: center; }
-              }
-            </style>
-          </head>
-          <body>
-            <div class="print-container">
-              <img src="${qrImage}" alt="QR Code" />
-              <div class="label-text">${labelContent}</div>
-            </div>
-          </body>
-        </html>
-      `);
-      printWindow.document.close();
-      printWindow.focus();
-      printWindow.print();
-      printWindow.close();
-    }
+    const padding = 30;
+    const textBlockHeight = 50;
+    
+    offscreenCanvas.width = canvas.width + padding * 2;
+    offscreenCanvas.height = canvas.height + padding * 2 + textBlockHeight;
+
+    // Latar belakang
+    ctx.fillStyle = bgColor; // Menggunakan warna latar yang dipilih pengguna
+    ctx.fillRect(0, 0, offscreenCanvas.width, offscreenCanvas.height);
+
+    // Gambar QR code ke canvas baru
+    ctx.drawImage(canvas, padding, padding);
+
+    // Tambahkan teks di bawah QR code
+    ctx.fillStyle = '#2d3748';
+    ctx.textAlign = 'center';
+    
+    ctx.font = 'bold 18px sans-serif';
+    ctx.fillText("Pindai untuk Keaslian Produk", offscreenCanvas.width / 2, canvas.height + padding + 30);
+    
+    ctx.font = '14px monospace';
+    ctx.fillStyle = '#555555';
+    ctx.fillText(window.location.origin, offscreenCanvas.width / 2, canvas.height + padding + 55);
+
+    // Trigger download
+    const link = document.createElement('a');
+    link.download = 'ymg-qrcode-label.png';
+    link.href = offscreenCanvas.toDataURL('image/png');
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   };
   
   const resetColors = () => {
@@ -208,17 +192,17 @@ const LabelingView: React.FC = () => {
             <ul className="list-disc list-inside text-sm text-slate-600 space-y-2">
               <li>Saat pelanggan memindai, mereka akan diarahkan ke halaman verifikasi.</li>
               <li>Jika Anda mengubah logo di Pengaturan, QR code di sini akan otomatis ter-update.</li>
-              <li>Gunakan tombol cetak untuk membuat label fisik untuk produk Anda.</li>
+              <li>Gunakan tombol unduh untuk menyimpan gambar label ke perangkat Anda.</li>
             </ul>
             <button 
-              onClick={handlePrint}
+              onClick={handleDownload}
               disabled={isLoading}
-              className="mt-6 px-5 py-3 bg-slate-900 text-white rounded-xl text-sm font-bold hover:bg-slate-700 flex items-center gap-2 disabled:bg-slate-400"
+              className="mt-6 px-5 py-3 bg-slate-900 text-white rounded-xl text-sm font-bold hover:bg-slate-700 flex items-center justify-center gap-2 disabled:bg-slate-400"
             >
               <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+                <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
               </svg>
-              Cetak Label
+              <span>Download Label</span>
             </button>
           </div>
         </div>
