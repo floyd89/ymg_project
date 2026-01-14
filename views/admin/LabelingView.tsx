@@ -7,6 +7,7 @@ import { settingsService } from '../../services/settingsService';
 import { formatCurrency } from '../../utils/formatters';
 import { uploadImage } from '../../utils/imageConverter';
 import { supabase } from '../../lib/supabaseClient';
+import html2canvas from 'html2canvas';
 
 type LabelType = 'product' | 'page';
 
@@ -25,6 +26,7 @@ const LabelingView: React.FC = () => {
   const [activeTab, setActiveTab] = useState<LabelType>('product');
   const [searchTerm, setSearchTerm] = useState('');
   const [isLoading, setIsLoading] = useState(true);
+  const [isDownloading, setIsDownloading] = useState(false);
   
   // State Selection
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
@@ -80,6 +82,42 @@ const LabelingView: React.FC = () => {
 
   const handlePrint = () => {
     window.print();
+  };
+
+  const handleDownload = async () => {
+    const element = document.getElementById('print-area');
+    if (!element) return;
+    
+    setIsDownloading(true);
+    try {
+        // Gunakan html2canvas untuk merender elemen menjadi canvas
+        const canvas = await html2canvas(element, {
+            scale: 3, // Skala tinggi untuk kualitas HD
+            backgroundColor: '#ffffff', // Pastikan background putih
+            useCORS: true, // Izinkan gambar cross-origin (untuk logo)
+            logging: false
+        });
+
+        // Convert canvas ke URL gambar
+        const image = canvas.toDataURL("image/png", 1.0);
+        
+        // Buat link download sementara
+        const link = document.createElement('a');
+        const filename = activeTab === 'product' && selectedProduct
+            ? `Label-Product-${selectedProduct.name.replace(/\s+/g, '-')}.png`
+            : activeTab === 'page' && selectedPage
+                ? `Label-Page-${selectedPage.name.replace(/\s+/g, '-')}.png`
+                : 'label.png';
+
+        link.download = filename;
+        link.href = image;
+        link.click();
+    } catch (error) {
+        console.error("Download failed:", error);
+        alert("Gagal mengunduh gambar label.");
+    } finally {
+        setIsDownloading(false);
+    }
   };
 
   const getDisplayUrl = (path: string): string => {
@@ -274,14 +312,31 @@ const LabelingView: React.FC = () => {
               
               <div className="print:hidden mb-6 flex justify-between w-full items-center">
                 <h3 className="font-bold text-slate-800">Pratinjau Label</h3>
-                <button 
-                  onClick={handlePrint}
-                  disabled={activeTab === 'product' ? !selectedProduct : !selectedPage}
-                  className="px-5 py-2 bg-slate-900 text-white rounded-lg text-sm font-bold hover:bg-slate-700 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" /></svg>
-                  Cetak Label
-                </button>
+                <div className="flex items-center gap-2">
+                    {/* Tombol Download */}
+                    <button 
+                        onClick={handleDownload}
+                        disabled={isDownloading || (activeTab === 'product' ? !selectedProduct : !selectedPage)}
+                        className="px-4 py-2 bg-white border border-slate-300 text-slate-700 rounded-lg text-sm font-bold hover:bg-slate-50 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                        {isDownloading ? (
+                            <span className="w-4 h-4 border-2 border-slate-400 border-t-slate-700 rounded-full animate-spin"></span>
+                        ) : (
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
+                        )}
+                        Download
+                    </button>
+                    
+                    {/* Tombol Cetak */}
+                    <button 
+                        onClick={handlePrint}
+                        disabled={activeTab === 'product' ? !selectedProduct : !selectedPage}
+                        className="px-5 py-2 bg-slate-900 text-white rounded-lg text-sm font-bold hover:bg-slate-700 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" /></svg>
+                        Cetak Label
+                    </button>
+                </div>
               </div>
 
               {/* TAMPILAN LABEL */}
