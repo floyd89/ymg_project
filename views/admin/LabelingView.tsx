@@ -5,6 +5,8 @@ import { Product, AppSettings } from '../../types';
 import { productService } from '../../services/productService';
 import { settingsService } from '../../services/settingsService';
 import { formatCurrency } from '../../utils/formatters';
+import { uploadImage } from '../../utils/imageConverter';
+import { supabase } from '../../lib/supabaseClient';
 
 type LabelType = 'product' | 'page';
 
@@ -30,6 +32,11 @@ const LabelingView: React.FC = () => {
   // State Selection
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [selectedPage, setSelectedPage] = useState<StaticPage | null>(null);
+
+  // State Customization
+  const [qrColor, setQrColor] = useState('#0f172a'); // Default Slate-900
+  const [qrLogo, setQrLogo] = useState<string | null>(null);
+  const [isUploadingLogo, setIsUploadingLogo] = useState(false);
   
   const storeUrl = window.location.origin;
 
@@ -75,6 +82,11 @@ const LabelingView: React.FC = () => {
         setSettings(fetchedSettings);
         // Default select first page
         setSelectedPage(staticPages[0]);
+        // Default use store logo if available, otherwise null
+        if (fetchedSettings?.storeLogoUrl) {
+            // Note: We might want to keep it clean by default, but let's leave it null for user to decide
+            // setQrLogo(fetchedSettings.storeLogoUrl);
+        }
       } catch (error) {
         console.error("Gagal memuat data:", error);
       } finally {
@@ -90,6 +102,28 @@ const LabelingView: React.FC = () => {
 
   const handlePrint = () => {
     window.print();
+  };
+
+  const getDisplayUrl = (path: string): string => {
+    if (!path) return '';
+    if (path.startsWith('http') || path.startsWith('data:')) {
+      return path;
+    }
+    const { data } = supabase.storage.from('store-images').getPublicUrl(path);
+    return data ? data.publicUrl : '';
+  };
+
+  const handleQrLogoUpload = async (file: File | null) => {
+    if (!file) return;
+    setIsUploadingLogo(true);
+    try {
+      const filePath = await uploadImage(file);
+      setQrLogo(filePath);
+    } catch (error) {
+      alert("Gagal mengunggah logo: " + (error instanceof Error ? error.message : "Error unknown"));
+    } finally {
+      setIsUploadingLogo(false);
+    }
   };
 
   return (
@@ -121,7 +155,8 @@ const LabelingView: React.FC = () => {
             </button>
           </div>
 
-          <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm min-h-[400px]">
+          {/* List Item Selector */}
+          <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm max-h-[400px] flex flex-col">
             {activeTab === 'product' ? (
               <>
                 <h3 className="font-bold text-slate-800 mb-4">Pilih Produk</h3>
@@ -133,7 +168,7 @@ const LabelingView: React.FC = () => {
                   className="w-full p-3 mb-4 bg-slate-50 rounded-lg border border-slate-200 font-medium text-sm focus:ring-2 focus:ring-slate-900 focus:border-slate-900"
                 />
                 
-                <div className="h-[350px] overflow-y-auto pr-2 space-y-2 no-scrollbar">
+                <div className="overflow-y-auto pr-2 space-y-2 no-scrollbar flex-grow">
                   {isLoading && <div className="text-center py-4">Memuat...</div>}
                   {!isLoading && filteredProducts.length === 0 && <div className="text-center py-4 text-slate-400">Tidak ditemukan.</div>}
                   {filteredProducts.map(product => (
@@ -160,7 +195,7 @@ const LabelingView: React.FC = () => {
             ) : (
               <>
                 <h3 className="font-bold text-slate-800 mb-4">Pilih Halaman</h3>
-                <div className="space-y-3">
+                <div className="space-y-3 overflow-y-auto pr-2 no-scrollbar flex-grow">
                   {staticPages.map(page => (
                     <button
                       key={page.id}
@@ -190,11 +225,73 @@ const LabelingView: React.FC = () => {
               </>
             )}
           </div>
+
+          {/* QR Customization Control */}
+          <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+            <h3 className="font-bold text-slate-800 mb-4">Kustomisasi Tampilan</h3>
+            
+            <div className="space-y-4">
+               {/* Color Picker */}
+               <div>
+                  <label className="text-xs font-bold text-slate-500 mb-2 block">Warna Barcode</label>
+                  <div className="flex items-center gap-3">
+                     <input 
+                        type="color" 
+                        value={qrColor} 
+                        onChange={(e) => setQrColor(e.target.value)} 
+                        className="w-10 h-10 rounded cursor-pointer border-none p-0"
+                     />
+                     <span className="text-xs font-mono bg-slate-100 px-2 py-1 rounded text-slate-600">{qrColor}</span>
+                  </div>
+               </div>
+
+               {/* Logo Upload */}
+               <div>
+                  <label className="text-xs font-bold text-slate-500 mb-2 block">Logo Tengah (Opsional)</label>
+                  
+                  {qrLogo ? (
+                    <div className="flex items-center gap-3 bg-slate-50 p-2 rounded-lg border border-slate-100">
+                        <img src={getDisplayUrl(qrLogo)} alt="QR Logo" className="w-10 h-10 object-contain bg-white rounded-md border" />
+                        <button 
+                            onClick={() => setQrLogo(null)}
+                            className="text-xs font-bold text-red-500 hover:text-red-700 ml-auto px-2"
+                        >
+                            Hapus
+                        </button>
+                    </div>
+                  ) : (
+                    <>
+                        <input 
+                            type="file" 
+                            accept="image/*" 
+                            id="qr-logo-upload"
+                            className="hidden"
+                            onChange={(e) => handleQrLogoUpload(e.target.files?.[0] ?? null)}
+                        />
+                        <label 
+                            htmlFor="qr-logo-upload" 
+                            className={`flex items-center justify-center gap-2 w-full p-2 border border-dashed border-slate-300 rounded-lg text-xs font-bold text-slate-500 hover:bg-slate-50 cursor-pointer ${isUploadingLogo ? 'opacity-50 cursor-not-allowed' : ''}`}
+                        >
+                            {isUploadingLogo ? (
+                                <span>Mengunggah...</span>
+                            ) : (
+                                <>
+                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" /></svg>
+                                    <span>Upload Logo</span>
+                                </>
+                            )}
+                        </label>
+                    </>
+                  )}
+               </div>
+            </div>
+          </div>
+
         </div>
 
         {/* Preview Area - This is what gets printed */}
         <div className="lg:col-span-2">
-          <div className="bg-white p-8 rounded-2xl border border-slate-200 shadow-sm flex flex-col items-center justify-center min-h-[500px] print:border-none print:shadow-none print:p-0">
+          <div className="bg-white p-8 rounded-2xl border border-slate-200 shadow-sm flex flex-col items-center justify-center min-h-[600px] print:border-none print:shadow-none print:p-0">
               
               <div className="print:hidden mb-6 flex justify-between w-full items-center">
                 <h3 className="font-bold text-slate-800">Pratinjau Label</h3>
@@ -223,8 +320,15 @@ const LabelingView: React.FC = () => {
                     <QRCodeSVG 
                         value={`${storeUrl}/#detail/${selectedProduct.id}`} 
                         size={150}
+                        fgColor={qrColor}
                         level={"H"}
                         includeMargin={true}
+                        imageSettings={qrLogo ? {
+                            src: getDisplayUrl(qrLogo),
+                            height: 35,
+                            width: 35,
+                            excavate: true,
+                        } : undefined}
                     />
                     </div>
 
@@ -263,16 +367,23 @@ const LabelingView: React.FC = () => {
                     
                     <div className="p-2 bg-white border-2 border-slate-900 rounded-xl relative">
                         {/* Sudut-sudut kecil di QR */}
-                        <div className="absolute -top-1 -left-1 w-2 h-2 bg-slate-900"></div>
-                        <div className="absolute -top-1 -right-1 w-2 h-2 bg-slate-900"></div>
-                        <div className="absolute -bottom-1 -left-1 w-2 h-2 bg-slate-900"></div>
-                        <div className="absolute -bottom-1 -right-1 w-2 h-2 bg-slate-900"></div>
+                        <div className="absolute -top-1 -left-1 w-2 h-2 bg-slate-900" style={{ backgroundColor: qrColor }}></div>
+                        <div className="absolute -top-1 -right-1 w-2 h-2 bg-slate-900" style={{ backgroundColor: qrColor }}></div>
+                        <div className="absolute -bottom-1 -left-1 w-2 h-2 bg-slate-900" style={{ backgroundColor: qrColor }}></div>
+                        <div className="absolute -bottom-1 -right-1 w-2 h-2 bg-slate-900" style={{ backgroundColor: qrColor }}></div>
                         
                         <QRCodeSVG 
                             value={`${storeUrl}${selectedPage.path}`} 
                             size={160}
+                            fgColor={qrColor}
                             level={"H"}
                             includeMargin={false}
+                            imageSettings={qrLogo ? {
+                                src: getDisplayUrl(qrLogo),
+                                height: 40,
+                                width: 40,
+                                excavate: true,
+                            } : undefined}
                         />
                     </div>
 
@@ -280,7 +391,7 @@ const LabelingView: React.FC = () => {
                         {selectedPage.subtitle}
                     </p>
 
-                    <div className="w-full bg-slate-900 text-white py-2 px-4 rounded-full mt-2">
+                    <div className="w-full bg-slate-900 text-white py-2 px-4 rounded-full mt-2" style={{ backgroundColor: qrColor }}>
                          <span className="text-xs font-black tracking-[0.3em] uppercase">
                             {selectedPage.footerText}
                          </span>
