@@ -14,10 +14,7 @@ interface StaticPage {
   id: string;
   name: string;
   path: string;
-  title: string;
-  subtitle: string;
-  footerText: string;
-  icon?: React.ReactNode;
+  labelTitle: string; // Teks besar di bawah QR
 }
 
 const LabelingView: React.FC = () => {
@@ -34,7 +31,7 @@ const LabelingView: React.FC = () => {
   const [selectedPage, setSelectedPage] = useState<StaticPage | null>(null);
 
   // State Customization
-  const [qrColor, setQrColor] = useState('#0f172a'); // Default Slate-900
+  const [qrColor, setQrColor] = useState('#1e293b'); // Default Slate-800 similar to image
   const [qrLogo, setQrLogo] = useState<string | null>(null);
   const [isUploadingLogo, setIsUploadingLogo] = useState(false);
   
@@ -46,27 +43,13 @@ const LabelingView: React.FC = () => {
       id: 'authentic',
       name: 'Sertifikat Keaslian (Authentic)',
       path: '/#authentic',
-      title: 'CERTIFICATE OF AUTHENTICITY',
-      subtitle: 'Scan to Verify Original Product',
-      footerText: 'OFFICIAL GUARANTEE',
-      icon: (
-        <svg className="w-8 h-8 text-slate-900" fill="currentColor" viewBox="0 0 20 20">
-            <path fillRule="evenodd" d="M6.267 3.455a3.066 3.066 0 001.745-.723 3.066 3.066 0 013.976 0 3.066 3.066 0 001.745.723 3.066 3.066 0 012.812 2.812c.051.643.304 1.254.723 1.745a3.066 3.066 0 010 3.976 3.066 3.066 0 00-.723 1.745 3.066 3.066 0 01-2.812 2.812 3.066 3.066 0 00-1.745.723 3.066 3.066 0 01-3.976 0 3.066 3.066 0 00-1.745-.723 3.066 3.066 0 01-2.812-2.812 3.066 3.066 0 00-.723-1.745 3.066 3.066 0 010-3.976 3.066 3.066 0 00.723-1.745 3.066 3.066 0 012.812-2.812zm7.44 5.252a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-        </svg>
-      )
+      labelTitle: 'Pindai untuk Keaslian Produk'
     },
     {
       id: 'home',
       name: 'Halaman Utama Toko',
       path: '/',
-      title: 'VISIT OUR STORE',
-      subtitle: 'Scan to Explore Collection',
-      footerText: 'SHOP ONLINE',
-      icon: (
-        <svg className="w-8 h-8 text-slate-900" fill="currentColor" viewBox="0 0 20 20">
-          <path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.293.293a1 1 0 001.414-1.414l-7-7z" />
-        </svg>
-      )
+      labelTitle: 'Kunjungi Toko Resmi Kami'
     }
   ];
 
@@ -82,11 +65,6 @@ const LabelingView: React.FC = () => {
         setSettings(fetchedSettings);
         // Default select first page
         setSelectedPage(staticPages[0]);
-        // Default use store logo if available, otherwise null
-        if (fetchedSettings?.storeLogoUrl) {
-            // Note: We might want to keep it clean by default, but let's leave it null for user to decide
-            // setQrLogo(fetchedSettings.storeLogoUrl);
-        }
       } catch (error) {
         console.error("Gagal memuat data:", error);
       } finally {
@@ -239,7 +217,7 @@ const LabelingView: React.FC = () => {
                         type="color" 
                         value={qrColor} 
                         onChange={(e) => setQrColor(e.target.value)} 
-                        className="w-10 h-10 rounded cursor-pointer border-none p-0"
+                        className="w-10 h-10 rounded cursor-pointer border-none p-0 shadow-sm"
                      />
                      <span className="text-xs font-mono bg-slate-100 px-2 py-1 rounded text-slate-600">{qrColor}</span>
                   </div>
@@ -270,7 +248,7 @@ const LabelingView: React.FC = () => {
                         />
                         <label 
                             htmlFor="qr-logo-upload" 
-                            className={`flex items-center justify-center gap-2 w-full p-2 border border-dashed border-slate-300 rounded-lg text-xs font-bold text-slate-500 hover:bg-slate-50 cursor-pointer ${isUploadingLogo ? 'opacity-50 cursor-not-allowed' : ''}`}
+                            className={`flex items-center justify-center gap-2 w-full p-3 border border-dashed border-slate-300 rounded-lg text-xs font-bold text-slate-500 hover:bg-slate-50 cursor-pointer ${isUploadingLogo ? 'opacity-50 cursor-not-allowed' : ''}`}
                         >
                             {isUploadingLogo ? (
                                 <span>Mengunggah...</span>
@@ -281,6 +259,7 @@ const LabelingView: React.FC = () => {
                                 </>
                             )}
                         </label>
+                        <p className="text-[10px] text-slate-400 mt-2">Logo akan muncul di tengah barcode.</p>
                     </>
                   )}
                </div>
@@ -346,55 +325,37 @@ const LabelingView: React.FC = () => {
               )}
 
               {(activeTab === 'page' && selectedPage) && (
-                 <div id="print-area" className="border-[6px] border-slate-900 p-8 w-[350px] bg-white text-center flex flex-col items-center gap-5 break-inside-avoid relative overflow-hidden">
-                    {/* Hiasan Sudut */}
-                    <div className="absolute top-0 left-0 w-8 h-8 border-r border-b border-slate-900 bg-slate-900"></div>
-                    <div className="absolute top-0 right-0 w-8 h-8 border-l border-b border-slate-900 bg-slate-900"></div>
-                    <div className="absolute bottom-0 left-0 w-8 h-8 border-r border-t border-slate-900 bg-slate-900"></div>
-                    <div className="absolute bottom-0 right-0 w-8 h-8 border-l border-t border-slate-900 bg-slate-900"></div>
-
-                    <div className="mt-2">
-                        {selectedPage.icon}
-                    </div>
-
-                    <div className="uppercase tracking-[0.2em] text-xs font-black text-slate-900 border-b-2 border-slate-900 pb-2 mb-2 w-full">
-                        {settings?.storeName || 'YMG OFFICIAL STORE'}
-                    </div>
+                 <div id="print-area" className="p-8 w-[350px] bg-white text-center flex flex-col items-center justify-center gap-6 break-inside-avoid">
+                    {/* Tampilan Minimalis Sesuai Gambar Referensi */}
                     
-                    <h2 className="text-2xl font-black text-slate-900 leading-none tracking-tight">
-                        {selectedPage.title}
-                    </h2>
-                    
-                    <div className="p-2 bg-white border-2 border-slate-900 rounded-xl relative">
-                        {/* Sudut-sudut kecil di QR */}
-                        <div className="absolute -top-1 -left-1 w-2 h-2 bg-slate-900" style={{ backgroundColor: qrColor }}></div>
-                        <div className="absolute -top-1 -right-1 w-2 h-2 bg-slate-900" style={{ backgroundColor: qrColor }}></div>
-                        <div className="absolute -bottom-1 -left-1 w-2 h-2 bg-slate-900" style={{ backgroundColor: qrColor }}></div>
-                        <div className="absolute -bottom-1 -right-1 w-2 h-2 bg-slate-900" style={{ backgroundColor: qrColor }}></div>
-                        
+                    {/* QR Code Container */}
+                    <div className="relative">
                         <QRCodeSVG 
                             value={`${storeUrl}${selectedPage.path}`} 
-                            size={160}
+                            size={200}
                             fgColor={qrColor}
+                            bgColor={"#FFFFFF"}
                             level={"H"}
                             includeMargin={false}
                             imageSettings={qrLogo ? {
                                 src: getDisplayUrl(qrLogo),
-                                height: 40,
-                                width: 40,
+                                height: 45,
+                                width: 45,
                                 excavate: true,
                             } : undefined}
                         />
                     </div>
 
-                    <p className="text-sm font-bold text-slate-600 uppercase tracking-wider">
-                        {selectedPage.subtitle}
-                    </p>
-
-                    <div className="w-full bg-slate-900 text-white py-2 px-4 rounded-full mt-2" style={{ backgroundColor: qrColor }}>
-                         <span className="text-xs font-black tracking-[0.3em] uppercase">
-                            {selectedPage.footerText}
-                         </span>
+                    {/* Teks Judul Tebal */}
+                    <div className="flex flex-col gap-2 w-full">
+                        <h2 className="text-lg font-black text-slate-900 leading-tight">
+                            {selectedPage.labelTitle}
+                        </h2>
+                        
+                        {/* URL Monospace Kecil */}
+                        <p className="text-xs font-mono text-slate-500 break-all">
+                            {storeUrl}{selectedPage.path === '/' ? '' : selectedPage.path}
+                        </p>
                     </div>
                  </div>
               )}
