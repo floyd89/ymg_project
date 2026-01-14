@@ -240,35 +240,45 @@ const App: React.FC = () => {
 
   return (
     <div className="min-h-screen flex flex-col bg-white">
-      <Navbar onGoHome={navigateToHome} onGoProducts={navigateToProductsSection} onGoAbout={navigateToAbout} onGoToCart={navigateToCart} cartItemCount={cartItemCount} />
-      <main key={currentView} className="flex-grow animate-view-enter pb-24 md:pb-0">
+      {/* Hide Navbar on authentic page */}
+      {currentView !== 'authentic' && (
+        <Navbar onGoHome={navigateToHome} onGoProducts={navigateToProductsSection} onGoAbout={navigateToAbout} onGoToCart={navigateToCart} cartItemCount={cartItemCount} />
+      )}
+      
+      <main key={currentView} className={`flex-grow animate-view-enter ${currentView !== 'authentic' ? 'pb-24 md:pb-0' : ''}`}>
         {renderContent()}
       </main>
-      <FloatingBottomNav 
-        onHomeClick={navigateToHome} 
-        onAboutClick={navigateToAbout}
-        onAddToCart={() => {
-          if (selectedProduct) {
-            const variant = selectedVariant || {id: 'default', colorName: 'Default', imageUrl: '', isAvailable: true};
-            handleAddToCart(selectedProduct, variant, 1, selectedSize);
-            alert(`${selectedProduct.name} (${variant.colorName} - ${selectedSize || 'N/A'}) telah ditambahkan ke keranjang.`);
-          }
-        }}
-        onBuyNow={() => {
-          if (selectedProduct) {
-             const variant = selectedVariant || {id: 'default', colorName: 'Default', imageUrl: '', isAvailable: true};
-            handleBuyNow(selectedProduct, variant, 1, selectedSize);
-          }
-        }}
-        onGoToCart={navigateToCart}
-        onSelectVariantClick={handleSelectVariant}
-        onSelectSizeClick={handleSelectSize}
-        cartItemCount={cartItemCount}
-        activeProduct={currentView === 'detail' ? selectedProduct : null}
-        activeVariant={currentView === 'detail' ? selectedVariant : null}
-        activeSize={currentView === 'detail' ? selectedSize : null}
-      />
-      <Footer />
+
+      {/* Hide Floating Nav on authentic page */}
+      {currentView !== 'authentic' && (
+        <FloatingBottomNav 
+          onHomeClick={navigateToHome} 
+          onAboutClick={navigateToAbout}
+          onAddToCart={() => {
+            if (selectedProduct) {
+              const variant = selectedVariant || {id: 'default', colorName: 'Default', imageUrl: '', isAvailable: true};
+              handleAddToCart(selectedProduct, variant, 1, selectedSize);
+              alert(`${selectedProduct.name} (${variant.colorName} - ${selectedSize || 'N/A'}) telah ditambahkan ke keranjang.`);
+            }
+          }}
+          onBuyNow={() => {
+            if (selectedProduct) {
+               const variant = selectedVariant || {id: 'default', colorName: 'Default', imageUrl: '', isAvailable: true};
+              handleBuyNow(selectedProduct, variant, 1, selectedSize);
+            }
+          }}
+          onGoToCart={navigateToCart}
+          onSelectVariantClick={handleSelectVariant}
+          onSelectSizeClick={handleSelectSize}
+          cartItemCount={cartItemCount}
+          activeProduct={currentView === 'detail' ? selectedProduct : null}
+          activeVariant={currentView === 'detail' ? selectedVariant : null}
+          activeSize={currentView === 'detail' ? selectedSize : null}
+        />
+      )}
+
+      {/* Hide Footer on authentic page */}
+      {currentView !== 'authentic' && <Footer />}
     </div>
   );
 };
